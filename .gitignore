@@ -1,3 +1,10 @@
 *_env
-*experiments/
 __pycache__
+
+
+experiments/*
+
+figures
+images
+logs
+models
