@@ -1,0 +1,147 @@
+{
+    "id": "001",
+    "seed": 1234,
+    "description": "Square",
+
+    "io": {
+        "base_dir": "/home/antj/Test/experiments/Square",
+        "figure_dir": "/home/antj/Test/experiments/Square/figures",
+        "model_dir": "/home/antj/Test/experiments/Square/models",
+        "image_dir": "/home/antj/Test/experiments/Square/images",
+        "log_dir": "/home/antj/Test/experiments/Square/logs"
+    },
+    
+    "verbosity": {
+        "init": true,
+        "training": true,
+        "evaluation": true,
+        "plotting": true,
+        "sampling": true
+    },
+
+    "geometry": {
+        "domain": {
+            "rectangle": { "xlim": [-10, 10], "ylim": [-10, 10] },
+            "circle": { "center": [0.0, 0.0], "radius": 2.0 }
+        }
+    },
+
+    "run": {
+        "train": {
+            "sampling": {
+                "coll": 8000,
+                "rect": [500, 500, 500, 500],
+                "data": 0,
+                "do_plots": true
+            },
+            "iterations": 50000,
+            "optimizer": "adam",
+            "loss_fn": "mse",
+            "update_scheme": "unweighted",
+            "update_kwargs": {
+                "softadapt": {
+                    "order": 4,
+                    "beta": 0.1,
+                    "loss_weighted": true,
+                    "normalized": false,
+                    "update_every": 10,
+                    "running_average": 0.9
+                },
+                "gradnorm": {
+                    "normalized": true,
+                    "update_every": 10,
+                    "running_average": 0.9
+                },
+                "unweighted": {
+                    "normalized": true
+                },
+                "weighted": {
+                    "weights": [5, 5, 2],
+                    "normalized": false
+                }
+            },
+            "learning_rate": 1e-3,
+            "batch_size": -1,
+            "decay_rate": 0.95,
+            "decay_steps": 2000,
+            "transfer_learning": false,
+            "checkpoint_every": 5000,
+            "resampling": {
+                "do_resampling": false,
+                "resample_steps": 5000,
+                "resample_num": 100,
+                "loss_emphasis": 2,
+                "replace": true
+            },
+            "jitted_update": true
+        },
+        "eval": {
+            "error_metric": "L2-rel",
+            "transfer_learning": false,
+            "sampling": {
+                "coll": 200,
+                "rect": [50, 50, 50, 50],
+                "data": 50
+            }
+        }
+    },
+
+    "model": {
+        "pinn": {
+            "network": [
+                {
+                    "architecture": "mlp",
+                    "specifications": {
+                        "input_dim": 2,
+                        "output_dim": 1,
+                        "hidden_dims": [128, 128],
+                        "activation": "tanh",
+                        "initialization": "glorot_normal",
+                        "embed": null,
+                        "embed2": {"embed_scale": 1.0, "embed_dim": 128},
+                        "reparam": null,
+                        "reparam2": {"type": "weight_fact", "mean": 0.5, "stddev": 0.1},
+                        "nondim": null
+                    }
+                }
+            ]
+        }
+    },
+
+    "plotting": {
+        "sampling": {
+            "do_plots": true,
+            "plot_every": null,
+            "overwrite": false,
+            "file_extension": "png",
+            "kwargs": {
+                "coll": {
+                    "color": "blue",
+                    "s": 5
+                },
+                "rect": {
+                    "color": "green",
+                    "s": 5
+                },
+                "data": {
+                    "color": "orange",
+                    "s": 5
+                }
+            }
+        },
+        "results": {
+            "do_plots": false,
+            "plot_every": -1,
+            "overwrite": false,
+            "file_extension": "png"
+        },
+        "dpi": 100,
+        "grid": 151
+    },
+
+    "logging": {
+        "do_logging": true,
+        "log_every": 100,
+        "print_every": 100
+    }
+}
