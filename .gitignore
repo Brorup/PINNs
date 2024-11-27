@@ -1,2 +1,4 @@
 *_env
 __pycache__
+
+PINN_framework/pip_install.sh
