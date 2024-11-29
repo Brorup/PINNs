@@ -1,14 +1,14 @@
 {
-    "id": "001",
+    "id": "002",
     "seed": 1234,
-    "description": "Square",
+    "description": "Square with finite difference",
 
     "io": {
-        "base_dir": "/home/antj/Test/experiments/Square",
-        "figure_dir": "/home/antj/Test/experiments/Square/figures",
-        "model_dir": "/home/antj/Test/experiments/Square/models",
-        "image_dir": "/home/antj/Test/experiments/Square/images",
-        "log_dir": "/home/antj/Test/experiments/Square/logs"
+        "base_dir": "/home/antj/PINNs/PINN_framework/experiments/Square",
+        "figure_dir": "/home/antj/PINNs/PINN_framework/experiments/Square/figures",
+        "model_dir": "/home/antj/PINNs/PINN_framework/experiments/Square/models",
+        "image_dir": "/home/antj/PINNs/PINN_framework/experiments/Square/images",
+        "log_dir": "/home/antj/PINNs/PINN_framework/experiments/Square/logs"
     },
     
     "verbosity": {
@@ -34,7 +34,7 @@
                 "data": 0,
                 "do_plots": true
             },
-            "iterations": 50000,
+            "iterations": 10000,
             "optimizer": "adam",
             "loss_fn": "mse",
             "update_scheme": "unweighted",
@@ -42,7 +42,7 @@
                 "softadapt": {
                     "order": 4,
                     "beta": 0.1,
-                    "loss_weighted": true,
+                    "loss_weighted": false,
                     "normalized": false,
                     "update_every": 10,
                     "running_average": 0.9

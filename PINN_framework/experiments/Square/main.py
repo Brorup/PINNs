@@ -12,8 +12,6 @@ from models.square.pinn import BiharmonicPINN
 from setup.parsers import parse_arguments
 from utils.utils import timer
 
-# jax.config.update("jax_enable_x64", True)
-
 class PINN01(BiharmonicPINN):
     def __init__(self, settings: dict):
         super().__init__(settings)
@@ -136,33 +134,13 @@ class PINN01(BiharmonicPINN):
                                                                                                 batch_num=batch_num
                                                                                                 )
             
-            
-            self.do_every(epoch=epoch, loss_term_fun=jitted_loss, params=self.params, inputs=self.train_points, true_val=self.train_true_val, update_key=update_key)
-
-        if do_log and epoch > log_every:
-            self.plot_loss(self.all_losses, {f"{loss_name}": key for key, loss_name in enumerate(self.loss_names)}, fig_dir=self.dir.figure_dir, name="losses.png", epoch_step=log_every)
         return
 
 
 if __name__ == "__main__":
-    t1 = perf_counter()
     
     raw_settings = timer(parse_arguments)()
     pinn = timer(PINN01)(raw_settings)
     timer(pinn.sample_points)()
     timer(pinn.train)()
-    # pinn.load_model()
-    # timer(pinn.write_model)()
     timer(pinn.plot_results)()
-    
-    # t2 = perf_counter()
-
-    # f = open(pinn.dir.log_dir.joinpath('time_and_eval.dat'), "w")
-    # f.write(f'Time taken for the whole training process: {t2-t1:.1f} s \t or \t {(t2-t1)/60.0:.1f} min\n')
-    
-    # for metric_fun in ["mse", "maxabse", "L2rel"]:
-    #     timer(pinn.eval)(metric=metric_fun)
-        
-    #     f.write(f'L2-rel xx error: {pinn.eval_result[metric_fun][0, 0]:.4f}\n')
-    #     f.write(f'L2-rel xy error: {pinn.eval_result[metric_fun][0, 1]:.4f}\n')
-    #     f.write(f'L2-rel yy error: {pinn.eval_result[metric_fun][1, 1]:.4f}\n')
