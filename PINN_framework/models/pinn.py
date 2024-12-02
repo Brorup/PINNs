@@ -7,12 +7,11 @@ import jax
 import jax.numpy as jnp
 import jax.tree_util as jtu
 import optax
-# from torch.utils.tensorboard import SummaryWriter
 from matplotlib import rc
 
 from .base import Model
 from .networks import setup_network
-from utils.plotting import save_fig#, log_figure
+from utils.plotting import save_fig
 from utils.utils import timer
 
 
@@ -82,7 +81,7 @@ class PINN(Model):
                                                     self.train_settings.decay_steps,
                                                     self.train_settings.decay_rate)
             self.optimizer = self.train_settings.optimizer(learning_rate=self.schedule)
-            # self.opt_state = self.optimizer.init(self.params)
+            
         return
     
     def _parse_geometry_settings(self, geometry_settings):
@@ -113,7 +112,6 @@ class PINN(Model):
         
     #     return jnp.concatenate([all_losses, scalars.reshape(-1, scalars.shape[0])])
     
-    @timer
     def plot_training_points(self, save=True, log=False, step=None):
         
         rc("text", usetex=True)
@@ -134,7 +132,4 @@ class PINN(Model):
         if save:
             save_fig(self.dir.figure_dir, "training_points", "pdf", plt.gcf())
         
-        # if log:
-        #     log_figure(fig=plt.gcf(), name="training_points", log_dir=self.dir.log_dir, step=step)
-            
         plt.close()

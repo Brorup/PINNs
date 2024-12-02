@@ -10,7 +10,6 @@ from .analytic import (
 from .loss import (
     loss_rect
 )
-# from .pinn_old import SQHPINN
 from .pinn import SquarePINN
 from .plotting import (
     plot_loss,

@@ -15,9 +15,9 @@ from datahandlers.generators import (
 from models import PINN
 from models.derivatives import hessian
 from models.networks import netmap
-from models.square import analytic
-from models.square import loss as sqloss
-from models.square import plotting as sqplot
+from models.biharmonicsquare import analytic
+from models.biharmonicsquare import loss as sqloss
+from models.biharmonicsquare import plotting as sqplot
 from models.loss import L2rel, mse, maxabse
 from utils.utils import timer
 

@@ -11,12 +11,7 @@ from matplotlib import rc
 
 from setup.settings import (
     ModelNotInitializedError,
-    log_settings,
     DefaultSettings,
-    SoftAdaptSettings,
-    WeightedSettings,
-    UnweightedSettings,
-    GradNormSettings,
     AdaptiveWeightSchemeSettings
 )
 from setup.parsers import (
@@ -24,12 +19,10 @@ from setup.parsers import (
     parse_logging_settings,
     parse_plotting_settings,
     parse_directory_settings,
-    parse_run_settings,
-    parse_loss_settings
+    parse_run_settings
 )
 from .optim import get_update
 from .loss import softadapt, gradnorm, running_average
-from utils.plotting import save_fig
 from utils.checkpoint import write_model, load_model
 
 
@@ -66,11 +59,17 @@ class Model(metaclass=ABCMeta):
             if self._verbose.init:
                 print(f"No seed specified in settings. Seed is set to {DefaultSettings.SEED}.")
             self._seed = DefaultSettings.SEED
+        else:
+            if self._verbose.init:
+                print(f"Seed is set to {self._seed}.")
         self._id = settings.get("id")
         if self._id is None:
             if self._verbose.init:
                 print(f"No ID specified in settings. ID is set to '{DefaultSettings.ID}'.")
             self._id = DefaultSettings.ID
+        else:
+            if self._verbose.init:
+                print(f"ID is set to '{self._id}'.")
         
         self._static_loss_args = ()
         
@@ -82,18 +81,19 @@ class Model(metaclass=ABCMeta):
         # Parse more settings
         self._parse_directory_settings(settings["io"], self._id)
         self._parse_run_settings(settings["run"])
-        self._prase_loss_settings(settings["run"]["train"].get("loss_fn"))
+        # self._prase_loss_settings(settings["run"]["train"].get("loss_fn"))
         self._parse_plotting_settings(settings["plotting"])
         self._parse_logging_settings(settings["logging"])
         
-        if self.logging.do_logging:
-            log_settings(settings, self.dir.log_dir, tensorboard=True, text_file=False, empty_dir=False)
+        # if self.logging.do_logging:
+        #     log_settings(settings, self.dir.log_dir, tensorboard=True, text_file=False, empty_dir=False)
         
         if self.train_settings.checkpoint_every is not None:
             self.write_model(init=True)
 
         if settings.get("description"):
-            with open(self.dir.log_dir / "description.txt", "a+") as file:
+            print(f"Setting description as: {settings["description"]}")
+            with open(self.dir.log_dir / "description.txt", "w+") as file:
                 file.writelines([settings["description"], "\n\n"])
 
         return
@@ -112,14 +112,16 @@ class Model(metaclass=ABCMeta):
         """
 
         self.train_settings, self.do_train = parse_run_settings(run_settings, run_type="train")
+        self.loss_fn = self.train_settings.loss_fn
+
         self.eval_settings, self.do_eval = parse_run_settings(run_settings, run_type="eval")
         return
     
-    def _prase_loss_settings(self, loss_settings: str | None = None):
-        if loss_settings is None:
-            loss_settings = "mse"
-        self.loss_fn = parse_loss_settings(loss_settings)
-        return
+    # def _prase_loss_settings(self, loss_settings: str | None = None):
+    #     if loss_settings is None:
+    #         loss_settings = "mse"
+    #     self.loss_fn = parse_loss_settings(loss_settings)
+    #     return
     
     def _parse_plotting_settings(self, plot_settings: dict) -> None:
         """

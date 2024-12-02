@@ -2,13 +2,11 @@ import os
 from dataclasses import dataclass, field
 from collections.abc import Callable
 import pathlib
-import json
 
 import jax
 import jax.numpy as jnp
 import flax.linen as nn
 import optax
-# from torch.utils.tensorboard import SummaryWriter
 
 from utils.utils import WaveletActivation
 
@@ -223,33 +221,33 @@ class ResNetBlockSettings(Settings):
     shortcut_init: Callable | None = None
 
 
-def log_settings(settings_dict: dict,
-                 log_dir: pathlib.Path,
-                 *,
-                 tensorboard: bool = False,
-                 text_file: bool = False,
-                 empty_dir: bool = False
-                 ) -> None:
-    """
-    Logs JSON file of settings in Tensorboard and/or a text file.
-    """
+# def log_settings(settings_dict: dict,
+#                  log_dir: pathlib.Path,
+#                  *,
+#                  tensorboard: bool = False,
+#                  text_file: bool = False,
+#                  empty_dir: bool = False
+#                  ) -> None:
+#     """
+#     Logs JSON file of settings in Tensorboard and/or a text file.
+#     """
 
-    if text_file:
-        #TODO
-        raise NotImplementedError("Logging to a text file is not supported yet.")
+#     if text_file:
+#         #TODO
+#         raise NotImplementedError("Logging to a text file is not supported yet.")
 
-    # Function for JSON formatting
-    def pretty_json(hp):
-        json_hp = json.dumps(hp, indent=2)
-        return "".join("\t" + line for line in json_hp.splitlines(True))
+#     # Function for JSON formatting
+#     def pretty_json(hp):
+#         json_hp = json.dumps(hp, indent=2)
+#         return "".join("\t" + line for line in json_hp.splitlines(True))
     
-    if empty_dir:
-        os.system(f"rm -rf {log_dir}/*")
-        #TODO uncomment three below lines
-    # writer = SummaryWriter(log_dir=log_dir)
-    # writer.add_text("settings.json", pretty_json(settings_dict))
-    # writer.close()
-    return
+#     if empty_dir:
+#         os.system(f"rm -rf {log_dir}/*")
+#         #TODO uncomment three below lines
+#     # writer = SummaryWriter(log_dir=log_dir)
+#     # writer.add_text("settings.json", pretty_json(settings_dict))
+#     # writer.close()
+#     return
 
 
 def settings2dict(settings: Settings) -> dict:

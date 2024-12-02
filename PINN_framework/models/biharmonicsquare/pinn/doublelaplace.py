@@ -11,7 +11,7 @@ import optax
 from models.derivatives import laplacian, hessian
 from models.loss import ms, mse, sq, sqe
 from models.networks import netmap, setup_network
-import models.square.loss as sqloss
+import models.biharmonicsquare.loss as sqloss
 from . import SquarePINN
 
 class DoubleLaplacePINN(SquarePINN):

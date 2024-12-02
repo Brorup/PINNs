@@ -9,7 +9,7 @@ import optax
 from models.derivatives import biharmonic, hessian
 from models.loss import ms, mse, sq, sqe
 from models.networks import netmap
-import models.square.loss as sqloss
+import models.biharmonicsquare.loss as sqloss
 from . import SquarePINN
 
 class BiharmonicPINN(SquarePINN):

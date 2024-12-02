@@ -8,7 +8,7 @@ import jax
 import jax.numpy as jnp
 
 
-from models.square.pinn import BiharmonicPINN
+from models.biharmonicsquare.pinn import BiharmonicPINN
 from setup.parsers import parse_arguments
 from utils.utils import timer
 
@@ -100,8 +100,6 @@ class PINN01(BiharmonicPINN):
             del self.weights
             
         max_epochs = self.train_settings.iterations if epochs is None else epochs
-        log_every = self.logging.log_every
-        do_log = self.logging.do_logging
         
         jitted_loss = jax.jit(self.loss_terms, static_argnames=self._static_loss_args)
         
@@ -139,8 +137,8 @@ class PINN01(BiharmonicPINN):
 
 if __name__ == "__main__":
     
-    raw_settings = timer(parse_arguments)()
-    pinn = timer(PINN01)(raw_settings)
-    timer(pinn.sample_points)()
-    timer(pinn.train)()
-    timer(pinn.plot_results)()
+    raw_settings = parse_arguments()
+    pinn = PINN01(raw_settings)
+    pinn.sample_points()
+    pinn.train()
+    pinn.plot_results()
