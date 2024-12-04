@@ -1,6 +1,7 @@
 from collections.abc import Callable
 from functools import wraps
 from time import perf_counter
+import sys
 
 import jax
 import jax.numpy as jnp
@@ -118,6 +119,7 @@ def _verbose_update(print_every = LoggingSettings.print_every):
                 print("Loss terms:  ", end="")
                 [print(f"{l:2.2e}", end="  ") for l in aux]
                 print("\n\n")
+                sys.stdout.flush()
 
             return params, opt_state, total_loss, aux
         return wrapper

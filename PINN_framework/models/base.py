@@ -1,6 +1,7 @@
 from abc import ABCMeta, abstractmethod
 from collections.abc import Callable
 import inspect
+import sys
 
 import jax
 import jax.numpy as jnp
@@ -54,6 +55,8 @@ class Model(metaclass=ABCMeta):
         
         # Parse verbosity, seed and ID
         self._verbose = parse_verbosity_settings(settings.get("verbosity"))
+        if self._verbose.init:
+            print(f"\nInitialization: \n")
         self._seed = settings.get("seed")
         if self._seed is None:
             if self._verbose.init:
@@ -92,10 +95,14 @@ class Model(metaclass=ABCMeta):
             self.write_model(init=True)
 
         if settings.get("description"):
-            print(f"Setting description as: {settings["description"]}")
+            if self._verbose.init:
+                print(f"Setting description as: {settings["description"]}\n")
+
             with open(self.dir.log_dir / "description.txt", "w+") as file:
                 file.writelines([settings["description"], "\n\n"])
-
+        if self._verbose.init:
+            print("###############################################################\n\n")
+        sys.stdout.flush()
         return
 
     def _parse_directory_settings(self, dir_settings: dict, id: str) -> None:
@@ -504,7 +511,7 @@ class Model(metaclass=ABCMeta):
         ax.set_xlabel(r"\textbf{Epochs}", fontsize=30)
         ax.tick_params(axis='y', labelsize=25)
         ax.set_ylabel(r"\textbf{MSE}", fontsize=30, rotation=0, ha="right", labelpad=5)
-        fig.savefig(fig_dir / (name + ".pdf"), bbox_inches="tight")
+        fig.savefig(fig_dir / (name + ".png"), bbox_inches="tight")
         
         return
         

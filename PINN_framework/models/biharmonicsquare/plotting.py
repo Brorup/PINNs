@@ -118,7 +118,7 @@ def plot_potential(X, Y, Z, Z_true, *, fig_dir, name,
 
 
 def plot_stress(X, Y, Z, Z_true, *, fig_dir, name,
-                extension="pdf",
+                extension="png",
                 figsize = (25, 30), dpi = 100):
     """
     Function for plotting stresses in cartesian coordinates.

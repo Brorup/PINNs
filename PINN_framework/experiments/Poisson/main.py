@@ -8,11 +8,11 @@ import jax
 import jax.numpy as jnp
 
 
-from models.biharmonicsquare.pinn import BiharmonicPINN
+from models.poisson.pinn import PoissonPINN
 from setup.parsers import parse_arguments
 from utils.utils import timer
 
-class PINN01(BiharmonicPINN):
+class PINN01(PoissonPINN):
     def __init__(self, settings: dict):
         super().__init__(settings)
         self._set_loss(loss_term_fun_name="loss_terms")
@@ -34,54 +34,16 @@ class PINN01(BiharmonicPINN):
         """
         
         if update_key == 1:
-            loss_diri = self.loss_diri(params, inputs["rect"], true_val=true_val.get("diri"))
-            self.loss_names = [f"diri{i}" for i, _ in enumerate(loss_diri)]
-            return jnp.array((*loss_diri,))
-        
-        if update_key == 2:
-            loss_data = self.loss_data(params, inputs["data"], true_val=true_val.get("data"))
-            loss_coll = self.loss_coll(params, inputs["coll"], true_val=true_val.get("coll"))
-            loss_rect = self.loss_rect(params, inputs["rect"], true_val=true_val.get("rect"))
-            sum_rect = jnp.sum(jnp.array(loss_rect))
-            self.loss_names = ["phi", "rect"] + [f"data{i}" for i, _ in enumerate(loss_data)]
-            return jnp.array((loss_coll, sum_rect, *loss_data))
-        
-        if update_key == 3:
-            loss_data = self.loss_data(params, inputs["data"], true_val=true_val.get("data"))
-            self.loss_names = [f"data{i}" for i, _ in enumerate(loss_data)]
-            return jnp.array((*loss_data,))
-        
-        if update_key == 4:
-            loss_diri = self.loss_diri(params, inputs["rect"], true_val=true_val.get("diri"))
-            loss_coll = self.loss_coll(params, inputs["coll"], true_val=true_val.get("coll"))
-            loss_rect = self.loss_rect(params, inputs["rect"], true_val=true_val.get("rect"))
-            sum_rect = jnp.sum(jnp.array(loss_rect))
-            self.loss_names = ["phi", "rect"] + [f"diri{i}" for i, _ in enumerate(loss_diri)]
-            return jnp.array((loss_coll, sum_rect, *loss_diri))
+            pass
 
-        if update_key == 5:
-            loss_diri = self.loss_diri(params, inputs["rect"], true_val=true_val.get("diri"))
-            loss_data = self.loss_data(params, inputs["data"], true_val=true_val.get("data"))
-            loss_coll = self.loss_coll(params, inputs["coll"], true_val=true_val.get("coll"))
-            loss_rect = self.loss_rect(params, inputs["rect"], true_val=true_val.get("rect"))
-            sum_rect = jnp.sum(jnp.array(loss_rect))
-            self.loss_names = ["phi", "rect"] + [f"data{i}" for i, _ in enumerate(loss_data)] + [f"diri{i}" for i, _ in enumerate(loss_diri)]
-            return jnp.array((loss_coll, sum_rect, *loss_data, *loss_diri))
-
-        if update_key == 6:
-            loss_rect = self.loss_rect(params, inputs["rect"], true_val=true_val.get("rect"))
-            sum_rect = jnp.sum(jnp.array(loss_rect))
-            self.loss_names = ["rect"]
-            return jnp.array((sum_rect))
-        
         # Default update
         # Computes losses for domain and boundaries
         loss_coll = self.loss_coll(params, inputs["coll"], true_val=true_val.get("coll"))
-        loss_rect = self.loss_rect(params, inputs["rect"], true_val=true_val.get("rect"))
+        loss_bc = self.loss_bc(params, inputs["bc"], true_val=true_val.get("bc"))
         
         # Return 1D array of all loss values in the following order
-        self.loss_names = ["phi"] + [f"rect{i}" for i, _ in enumerate(loss_rect)]
-        return jnp.array((loss_coll, *loss_rect))
+        self.loss_names = ["phi"] + ["bc"]
+        return jnp.array((loss_coll, loss_bc))
 
     def train(self, update_key = None, epochs: int | None = None, new_init: bool = False) -> None:
         """
@@ -92,10 +54,6 @@ class PINN01(BiharmonicPINN):
         of times specified in the train_settings.
         """
 
-        if not self.do_train:
-            print("Model is not set to train")
-            return
-                
         if new_init:
             del self.weights
             
@@ -103,6 +61,18 @@ class PINN01(BiharmonicPINN):
         
         jitted_loss = jax.jit(self.loss_terms, static_argnames=self._static_loss_args)
         
+        if not self.do_train:
+            print("Model is not set to train")
+            return
+        else:
+            if self._verbose.training:
+                print("\nTraining:\n")
+                print(f"Using the {self.train_settings.update_scheme} loss weighting scheme")
+                print(f"Initial learning rate of {self.train_settings.learning_rate} with a decay of {self.train_settings.decay_rate} every {self.train_settings.decay_steps} steps")
+                print(f"Training for {max_epochs} epochs\n\n")
+                sys.stdout.flush()
+
+
         # Start time
         t0 = perf_counter()
         for epoch in range(max_epochs):
@@ -132,6 +102,8 @@ class PINN01(BiharmonicPINN):
                                                                                                 batch_num=batch_num
                                                                                                 )
             
+        if self._verbose.training:
+            print("###############################################################\n\n")
         return
 
 
@@ -141,4 +113,5 @@ if __name__ == "__main__":
     pinn = PINN01(raw_settings)
     pinn.sample_points()
     pinn.train()
+    pinn.eval()
     pinn.plot_results()

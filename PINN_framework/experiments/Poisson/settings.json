@@ -1,5 +1,5 @@
 {
-    "id": "001",
+    "id": "002",
     "seed": 1234,
     "description": "Poisson",
 
@@ -12,10 +12,9 @@
     
     "verbosity": {
         "init": true,
+        "sampling": true,
         "training": true,
-        "evaluation": true,
-        "plotting": true,
-        "sampling": true
+        "evaluation": true
     },
 
     "geometry": {
@@ -27,8 +26,8 @@
     "run": {
         "train": {
             "sampling": {
-                "coll": 1000,
-                "rect": [25, 25, 25, 25],
+                "coll": 10000,
+                "rect": [250, 250, 250, 250],
                 "data": 0
             },
             "iterations": 10000,
@@ -90,7 +89,7 @@
                     "specifications": {
                         "input_dim": 2,
                         "output_dim": 1,
-                        "hidden_dims": [128, 128],
+                        "hidden_dims": [20, 20],
                         "activation": "tanh",
                         "initialization": "glorot_normal"                    
                     }
@@ -112,6 +111,10 @@
                     "color": "green",
                     "s": 5
                 },
+                "bc": {
+                    "color": "green",
+                    "s": 5
+                },
                 "data": {
                     "color": "orange",
                     "s": 5
@@ -129,6 +132,6 @@
     "logging": {
         "do_logging": true,
         "log_every": 100,
-        "print_every": 100
+        "print_every": 1000
     }
 }

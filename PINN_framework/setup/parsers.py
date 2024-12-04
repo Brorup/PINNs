@@ -4,6 +4,7 @@ from collections.abc import Callable
 import pathlib
 import shutil
 import sys
+import os
 
 import jax
 import jax.tree_util as jtu
@@ -519,6 +520,12 @@ def parse_directory_settings(settings_dict: dict,
     dir.log_dir.mkdir(parents=True, exist_ok=True)
     shutil.copy(settings_dict["settings_path"], dir.log_dir)
     shutil.copy(sys.path[0] + '/main.py', dir.log_dir)
+    if os.path.exists(dir.log_dir / 'output.txt'):
+        i = 0
+        while os.path.exists(dir.log_dir / ('output' + str(i) + '.txt')):
+            i+=1
+        shutil.move(dir.log_dir / 'output.txt', dir.log_dir / ('output' + str(i) + '.txt'))
+    shutil.move(sys.path[0] + '/output.txt', dir.log_dir)
     
     return dir
 

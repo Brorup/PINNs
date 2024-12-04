@@ -68,11 +68,11 @@ class PINN(Model):
         num_nets = len(network_settings)
 
         # Initialize network classes
-        self.net = [setup_network(net) for net in network_settings]
+        self.nets = [setup_network(net) for net in network_settings]
         
         # Initialize network parameters
         self._key, *net_keys = jax.random.split(self._key, num_nets+1)
-        params = [net.init(net_keys[i], jnp.ones((net.input_dim,))) for i, net in enumerate(self.net)]
+        params = [net.init(net_keys[i], jnp.ones((net.input_dim,))) for i, net in enumerate(self.nets)]
         self.params = {"net"+str(i): par for i, par in enumerate(params)}
 
         # Set optimizer if relevant
@@ -125,11 +125,8 @@ class PINN(Model):
         plt.legend(by_label.values(), by_label.keys(), bbox_to_anchor=(1.04, 1))
         plt.xlabel("$x$", fontsize=15)
         plt.ylabel("$y$", fontsize=15)
-        plt.axis('square')
-        plt.xticks([-10,-5,0,5,10])
-        plt.yticks([-10,-5,0,5,10])
         
         if save:
-            save_fig(self.dir.figure_dir, "training_points", "pdf", plt.gcf())
+            save_fig(self.dir.figure_dir, "training_points", "png", plt.gcf())
         
         plt.close()

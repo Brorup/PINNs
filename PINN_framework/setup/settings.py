@@ -101,7 +101,6 @@ class VerbositySettings(Settings):
     init: bool = True
     training: bool = True
     evaluation: bool = True
-    plotting: bool = True
     sampling: bool = True
 
 
