@@ -1,5 +1,5 @@
 {
-    "id": "002",
+    "id": "001",
     "seed": 1234,
     "description": "Poisson",
 
@@ -26,7 +26,7 @@
     "run": {
         "train": {
             "sampling": {
-                "coll": 10000,
+                "coll": 2000,
                 "rect": [250, 250, 250, 250],
                 "data": 0
             },

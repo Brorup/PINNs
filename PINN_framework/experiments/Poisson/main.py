@@ -42,7 +42,7 @@ class PINN01(PoissonPINN):
         loss_bc = self.loss_bc(params, inputs["bc"], true_val=true_val.get("bc"))
         
         # Return 1D array of all loss values in the following order
-        self.loss_names = ["phi"] + ["bc"]
+        self.loss_names = ["coll"] + ["bc"]
         return jnp.array((loss_coll, loss_bc))
 
     def train(self, update_key = None, epochs: int | None = None, new_init: bool = False) -> None:
@@ -102,6 +102,12 @@ class PINN01(PoissonPINN):
                                                                                                 batch_num=batch_num
                                                                                                 )
             
+            self.do_every(epoch, jitted_loss, 
+                             params=self.params, 
+                             inputs=self.train_points, 
+                             true_val=self.train_true_val, 
+                             update_key=update_key)
+
         if self._verbose.training:
             print("###############################################################\n\n")
         return

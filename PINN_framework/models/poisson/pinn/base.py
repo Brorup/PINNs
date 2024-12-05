@@ -312,19 +312,19 @@ class PoissonPINN(PINN):
         
     def do_every(self, epoch: int | None = None, loss_term_fun: Callable | None = None, **kwargs):
         
-        plot_every = self.result_plots.plot_every
-        log_every = self.logging.log_every
-        do_log = self.logging.do_logging
+        # plot_every = self.result_plots.plot_every
+        # log_every = self.logging.log_every
+        # do_log = self.logging.do_logging
         checkpoint_every = self.train_settings.checkpoint_every
 
-        if do_log and epoch % log_every == log_every-1:
-            loss_terms = loss_term_fun(**kwargs)
-            if epoch // log_every == 0:
-                self.all_losses = jnp.zeros((0, loss_terms.shape[0]))
-            self.all_losses = self.log_scalars(loss_terms, self.loss_names, all_losses=self.all_losses, log=False)
+        # if do_log and epoch % log_every == log_every-1:
+        #     loss_terms = loss_term_fun(**kwargs)
+        #     if epoch // log_every == 0:
+        #         self.all_losses = jnp.zeros((0, loss_terms.shape[0]))
+        #     self.all_losses = self.log_scalars(loss_terms, self.loss_names, all_losses=self.all_losses, log=False)
 
-        if plot_every and epoch % plot_every == plot_every-1:
-            self.plot_results(save=False, log=True, step=epoch)
+        # if plot_every and epoch % plot_every == plot_every-1:
+        #     self.plot_results(save=False, log=True, step=epoch)
 
         if epoch % checkpoint_every == checkpoint_every-1:
             self.write_model(step=epoch+1)
