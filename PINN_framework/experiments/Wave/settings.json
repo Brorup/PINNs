@@ -1,0 +1,146 @@
+{
+    "id": "001",
+    "seed": 1234,
+    "description": "Wave",
+
+    "io": {
+        "base_dir": "/home/antj/PINNs/PINN_framework/experiments/Wave",
+        "figure_dir": "/home/antj/PINNs/PINN_framework/experiments/Wave/figures",
+        "model_dir": "/home/antj/PINNs/PINN_framework/experiments/Wave/models",
+        "log_dir": "/home/antj/PINNs/PINN_framework/experiments/Wave/logs"
+    },
+    
+    "verbosity": {
+        "init": true,
+        "sampling": true,
+        "training": true,
+        "evaluation": true
+    },
+
+    "geometry": {
+        "domain": {
+            "rectangle": { "xlim": [-2, 2], "tlim": [0, 5]}
+        }
+    },
+
+    "run": {
+        "train": {
+            "sampling": {
+                "coll": 2000,
+                "rect": [250, 250, 0, 250],
+                "data": 0
+            },
+            "iterations": 10000,
+            "optimizer": "adam",
+            "loss_fn": "mse",
+            "update_scheme": "softadapt",
+            "update_kwargs": {
+                "softadapt": {
+                    "order": 4,
+                    "beta": 0.1,
+                    "loss_weighted": false,
+                    "normalized": false,
+                    "update_every": 10,
+                    "running_average": 0.9
+                },
+                "gradnorm": {
+                    "normalized": true,
+                    "update_every": 10,
+                    "running_average": 0.9
+                },
+                "unweighted": {
+                    "normalized": true
+                },
+                "weighted": {
+                    "weights": [5, 5, 2],
+                    "normalized": false
+                }
+            },
+            "learning_rate": 1e-3,
+            "batch_size": -1,
+            "decay_rate": 0.95,
+            "decay_steps": 2000,
+            "transfer_learning": false,
+            "checkpoint_every": 5000,
+            "resampling": {
+                "do_resampling": false,
+                "resample_steps": 5000,
+                "resample_num": 100,
+                "loss_emphasis": 2,
+                "replace": true
+            },
+            "jitted_update": true
+        },
+        "eval": {
+            "error_metric": "L2-rel",
+            "sampling": {
+                "coll": 200,
+                "rect": [50, 50, 0, 50],
+                "data": 50
+            }
+        }
+    },
+
+    "model": {
+        "pinn": {
+            "network": [
+                {
+                    "architecture": "mlp",
+                    "specifications": {
+                        "input_dim": 2,
+                        "output_dim": 1,
+                        "hidden_dims": [20, 20],
+                        "activation": "tanh",
+                        "initialization": "glorot_normal"                    
+                    }
+                }
+            ]
+        }
+    },
+
+    "plotting": {
+        "sampling": {
+            "do_plots": true,
+            "file_extension": "png",
+            "kwargs": {
+                "coll": {
+                    "color": "blue",
+                    "s": 5
+                },
+                "rect": {
+                    "color": "green",
+                    "s": 5
+                },
+                "bc": {
+                    "color": "green",
+                    "s": 5
+                },
+                "data": {
+                    "color": "orange",
+                    "s": 5
+                },
+                "ic0": {
+                    "color": "purple",
+                    "s": 5
+                },
+                "ic1": {
+                    "color": "purple",
+                    "s": 5
+                }
+
+            }
+        },
+        "results": {
+            "do_plots": false,
+            "file_extension": "png"
+        },
+        "dpi": 100,
+        "grid": 151
+    },
+
+    "logging": {
+        "do_logging": true,
+        "log_every": 100,
+        "print_every": 1000
+    }
+}

@@ -23,7 +23,7 @@ class BiharmonicPINN(SquarePINN):
         self._set_update(loss_fun_name="_total_loss", optimizer_name="optimizer")
 
         # Only use one network
-        self.net_bi = self.net[0]
+        self.net_bi = self.nets[0]
         self.opt_state = self.optimizer.init(self.params)
 
         return

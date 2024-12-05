@@ -525,7 +525,8 @@ def parse_directory_settings(settings_dict: dict,
         while os.path.exists(dir.log_dir / ('output' + str(i) + '.txt')):
             i+=1
         shutil.move(dir.log_dir / 'output.txt', dir.log_dir / ('output' + str(i) + '.txt'))
-    shutil.move(sys.path[0] + '/output.txt', dir.log_dir)
+    if os.path.exists(sys.path[0] + '/output.txt'):
+        shutil.move(sys.path[0] + '/output.txt', dir.log_dir)
     
     return dir
 

@@ -125,6 +125,7 @@ class PINN(Model):
         plt.legend(by_label.values(), by_label.keys(), bbox_to_anchor=(1.04, 1))
         plt.xlabel("$x$", fontsize=15)
         plt.ylabel("$y$", fontsize=15)
+        plt.gca().set_box_aspect(1)
         
         if save:
             save_fig(self.dir.figure_dir, "training_points", "png", plt.gcf())

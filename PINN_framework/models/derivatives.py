@@ -15,9 +15,9 @@ def hessian(model: Callable, argnums=1) -> Callable:
     return jax.hessian(model, argnums=argnums)
 
 
-def laplacian(model: Callable, axis1=-2, axis2=-1, argnums=1) -> Callable:
+def laplacian(model: Callable, axis1=-2, axis2=-1, argnums=1, dims=2) -> Callable:
     hess = jax.hessian(model, argnums=argnums)
-    tr = lambda *args: jnp.trace(hess(*args).reshape(2, 2), axis1=axis1, axis2=axis2)
+    tr = lambda *args: jnp.trace(hess(*args).reshape(dims, dims), axis1=axis1, axis2=axis2)
     return tr
 
 
