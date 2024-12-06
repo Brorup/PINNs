@@ -109,6 +109,11 @@ class WavePINN(PINN):
         model = lambda p, x1, x2: self.forward(p, jnp.stack([x1, x2]))
         return gradient(model, argnums=2)(params, input[0], input[1])
 
+    def diff_yy_m_diff_xx(self, params, input: jax.Array):
+        hess = jax.hessian(self.forward, argnums=1)(params, input)
+        return hess[:, 1, 1] - hess[:, 0, 0]
+
+
     @override
     def predict(self,
                 input: jax.Array,
@@ -130,6 +135,8 @@ class WavePINN(PINN):
         wave = lambda params, input: self.dtt(params, input) - self.laplacian(params, input)
         # Compute laplacian values
         out = netmap(wave)(params, input)
+        
+        # out = netmap(self.diff_yy_m_diff_xx)(params, input)
 
         # Return loss
         if true_val is None:
