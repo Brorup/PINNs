@@ -88,37 +88,6 @@
     },
 
     "plotting": {
-        "sampling": {
-            "do_plots": true,
-            "file_extension": "png",
-            "kwargs": {
-                "coll": {
-                    "color": "blue",
-                    "s": 5
-                },
-                "rect": {
-                    "color": "green",
-                    "s": 5
-                },
-                "bc": {
-                    "color": "green",
-                    "s": 5
-                },
-                "data": {
-                    "color": "orange",
-                    "s": 5
-                },
-                "ic0": {
-                    "color": "purple",
-                    "s": 5
-                },
-                "ic1": {
-                    "color": "purple",
-                    "s": 5
-                }
-
-            }
-        },
         "results": {
             "do_plots": false,
             "file_extension": "png"

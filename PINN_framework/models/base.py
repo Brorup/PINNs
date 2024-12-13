@@ -128,8 +128,8 @@ class Model(metaclass=ABCMeta):
         
         self.sample_plots = parse_plotting_settings(plot_settings.get("sampling"))
         self.result_plots = parse_plotting_settings(plot_settings.get("results"))
-        plot_settings.pop("sampling")
-        plot_settings.pop("results")
+        plot_settings.pop("sampling") if plot_settings.get("sampling") else None
+        plot_settings.pop("results") if plot_settings.get("results") else None
         self.plot_settings = plot_settings
         return
     
