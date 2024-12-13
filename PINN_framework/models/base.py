@@ -84,12 +84,8 @@ class Model(metaclass=ABCMeta):
         # Parse more settings
         self._parse_directory_settings(settings["io"], self._id)
         self._parse_run_settings(settings["run"])
-        # self._prase_loss_settings(settings["run"]["train"].get("loss_fn"))
         self._parse_plotting_settings(settings["plotting"])
         self._parse_logging_settings(settings["logging"])
-        
-        # if self.logging.do_logging:
-        #     log_settings(settings, self.dir.log_dir, tensorboard=True, text_file=False, empty_dir=False)
         
         if self.train_settings.checkpoint_every is not None:
             self.write_model(init=True)
@@ -122,13 +118,8 @@ class Model(metaclass=ABCMeta):
         self.loss_fn = self.train_settings.loss_fn
 
         self.eval_settings, self.do_eval = parse_run_settings(run_settings, run_type="eval")
+
         return
-    
-    # def _prase_loss_settings(self, loss_settings: str | None = None):
-    #     if loss_settings is None:
-    #         loss_settings = "mse"
-    #     self.loss_fn = parse_loss_settings(loss_settings)
-    #     return
     
     def _parse_plotting_settings(self, plot_settings: dict) -> None:
         """

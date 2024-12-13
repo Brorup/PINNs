@@ -103,7 +103,7 @@ def parse_run_settings(settings_dict: dict, run_type: str
             eval_settings = parse_evaluation_settings(settings_dict["eval"])
             do_eval = True
         if "do_eval" in settings_dict.keys():
-            do_train = settings_dict["do_eval"]
+            do_eval = settings_dict["do_eval"]
         return eval_settings, do_eval
 
     raise ValueError(f"Invalid run type: '{run_type}'.")
@@ -340,8 +340,13 @@ def parse_training_settings(settings_dict: dict) -> TrainingSettings:
 
     settings_dict = settings_dict.copy()
 
-    # Get default settings (provide only required argument(s))
-    settings = TrainingSettings(sampling=settings_dict["sampling"])
+    # Get default settings
+    settings = TrainingSettings()
+
+    # sampling
+    if settings_dict.get("sampling") is not None:
+        settings.sampling = settings_dict["sampling"]
+
 
     # iterations
     if settings_dict.get("iterations") is not None:
@@ -448,8 +453,12 @@ def parse_evaluation_settings(settings_dict: dict) -> EvaluationSettings:
     
     settings_dict = settings_dict.copy()
 
-    # Get default settings (provide only required argument(s))
-    settings = EvaluationSettings(settings_dict["sampling"])
+    # Get default settings
+    settings = EvaluationSettings()
+
+    # sampling
+    if settings_dict.get("sampling") is not None:
+        settings.sampling = settings_dict["sampling"]
 
     # error_metric
     if settings_dict.get("error_metric") is not None:

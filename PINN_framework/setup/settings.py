@@ -102,6 +102,7 @@ class VerbositySettings(Settings):
     training: bool = True
     evaluation: bool = True
     sampling: bool = True
+    data: bool = True
 
 
 @dataclass
@@ -118,6 +119,7 @@ class DirectorySettings(Settings):
     model_dir: pathlib.Path | None = None
     image_dir: pathlib.Path | None = None
     log_dir: pathlib.Path | None = None
+    data_dir: pathlib.Path | None = None
     settings_path: pathlib.Path | None = None
 
 
@@ -159,7 +161,7 @@ class SoftAdaptSettings(AdaptiveWeightSchemeSettings):
 
 @dataclass(kw_only=True)
 class TrainingSettings(Settings):
-    sampling: dict
+    sampling: dict | None = None
     iterations: int = 1000
     optimizer: Callable = SupportedOptimizers.adam
     update_scheme: str = "unweighted"
@@ -177,7 +179,7 @@ class TrainingSettings(Settings):
 
 @dataclass
 class EvaluationSettings(Settings):
-    sampling: dict
+    sampling: dict | None = None
     error_metric: str = "L2-rel"
     transfer_learning: bool = False
 

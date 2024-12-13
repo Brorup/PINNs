@@ -97,7 +97,7 @@ def _verbose_update(print_every = LoggingSettings.print_every):
             return update_func
         
         @wraps(update_func)
-        def wrapper(*args, epoch, learning_rate, start_time, weights, **kwargs):
+        def wrapper(*args, epoch, learning_rate, start_time, weights, eval_func=None, **kwargs):
             
             # Call update function
             params, opt_state, total_loss, aux = update_func(*args, weights=weights, **kwargs)
@@ -118,6 +118,9 @@ def _verbose_update(print_every = LoggingSettings.print_every):
                 print("")
                 print("Loss terms:  ", end="")
                 [print(f"{l:2.2e}", end="  ") for l in aux]
+                if eval_func:
+                    eval_err = eval_func(verbose=False)
+                    print(f"\nTest error:  {eval_err:2.2e}")
                 print("\n\n")
                 sys.stdout.flush()
 
