@@ -57,25 +57,25 @@ def plot_loss(
     return
 
 
-def plot_results(prediction, data_true, fig_dir, save=True, dpi=50):
+def plot_results(prediction, data_true, labels, fig_dir, save=True, dpi=50):
     
     if save:
-        plot_prediction(prediction, data_true, fig_dir=fig_dir, name="Prediction", dpi=dpi)
+        plot_prediction(prediction, data_true, labels, fig_dir=fig_dir, name="Prediction", dpi=dpi)
 
     return
 
-def plot_prediction(prediction, data_true, *, fig_dir, name,
+def plot_prediction(prediction, data_true, labels, *, fig_dir, name,
                    extension="png", dpi=100):
     """
     Function for plotting potential function.
     """    
-    for i in range(prediction.shape[0]):
-        if i > 20:
-            break
-        
-        plt.plot(prediction[i], label='Prediction')
-        plt.plot(data_true[i], c='r', label='True')
-        plt.legend()
-        save_fig(fig_dir, f"test_data_{i}", extension, dpi=dpi)
-        plt.clf()
+    fig, axes = plt.subplots(3, 3, figsize=(20, 20))
+
+    for i, ax in enumerate(fig.axes):
+        ax.plot(prediction[:, i] - data_true[:, i], label=f"{labels[i]} error")
+        ax.legend()
+
+    save_fig(fig_dir, f"test_data", extension, dpi=dpi)
+    plt.clf()
+
     return

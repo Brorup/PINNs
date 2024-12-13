@@ -1,0 +1,104 @@
+{
+    "id": "001",
+    "seed": 1234,
+    "description": "CTS inverse problem of going from spectra to parameters",
+
+    "io": {
+        "base_dir": "/home/antj/PINNs/PINN_framework/experiments/CTSinverse",
+        "figure_dir": "/home/antj/PINNs/PINN_framework/experiments/CTSinverse/figures",
+        "model_dir": "/home/antj/PINNs/PINN_framework/experiments/CTSinverse/models",
+        "log_dir": "/home/antj/PINNs/PINN_framework/experiments/CTSinverse/logs",
+        "data_dir": "/home/antj/PINNs/PINN_framework/data/CTS"
+    },
+    
+    "verbosity": {
+        "init": true,
+        "data": true,
+        "training": true,
+        "evaluation": true
+    },
+
+    "run": {
+        "data_dir": "run0",
+        "truncate_spectra_to": 1000,
+        "beam_overlap": 20,
+        "input_power": 500000, 
+        "train": {
+            "iterations": 5000,
+            "optimizer": "adam",
+            "loss_fn": "mse",
+            "update_scheme": "unweighted",
+            "update_kwargs": {
+                "softadapt": {
+                    "order": 4,
+                    "beta": 0.1,
+                    "loss_weighted": false,
+                    "normalized": false,
+                    "update_every": 10,
+                    "running_average": 0.9
+                },
+                "gradnorm": {
+                    "normalized": true,
+                    "update_every": 10,
+                    "running_average": 0.9
+                },
+                "unweighted": {
+                    "normalized": true
+                },
+                "weighted": {
+                    "weights": [5, 5, 2],
+                    "normalized": false
+                }
+            },
+            "learning_rate": 1e-3,
+            "batch_size": -1,
+            "decay_rate": 0.95,
+            "decay_steps": 2000,
+            "transfer_learning": false,
+            "checkpoint_every": 5000,
+            "resampling": {
+                "do_resampling": false,
+                "resample_steps": 5000,
+                "resample_num": 100,
+                "loss_emphasis": 2,
+                "replace": true
+            },
+            "jitted_update": true
+        },
+        "eval": {
+            "error_metric": "maxabse"
+        }
+    },
+
+    "model": {
+        "nn": {
+            "network": [
+                {
+                    "architecture": "mlp",
+                    "specifications": {
+                        "input_dim": 1000,
+                        "output_dim": 9,
+                        "hidden_dims": [2000, 2000, 2000, 2000],
+                        "activation": "tanh",
+                        "initialization": "glorot_normal"                    
+                    }
+                }
+            ]
+        }
+    },
+
+    "plotting": {
+        "results": {
+            "do_plots": false,
+            "file_extension": "png"
+        },
+        "dpi": 100,
+        "grid": 151
+    },
+
+    "logging": {
+        "do_logging": true,
+        "log_every": 2,
+        "print_every": 1000
+    }
+}

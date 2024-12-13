@@ -28,6 +28,7 @@ from models.networks import netmap
 from models.cts import plotting as ctsplot
 from models.loss import L2rel, mse, maxabse, ms, sq, sqe
 from utils.utils import timer
+from utils.plotting import plot_loss_history
 from setup.parsers import load_json
 
 class CTSNN(NN):
@@ -145,13 +146,16 @@ class CTSNN(NN):
         if Path.is_file(self.data_dir / "param_ranges.json"):
             param_ranges = load_json(self.data_dir / "param_ranges.json")
             num_params = len(param_ranges.keys()) - 1
-
+            self.param_names = []
             if self._verbose.data:
                 print("Parameter ranges:")
-                for (key, value) in param_ranges.items():
-                    if key != 'sampling':
+            for (key, value) in param_ranges.items():
+                if key != 'sampling':
+                    if self._verbose.data:
                         print(f"\t{key}: \t[{value['min']}, {value['max']}]")
-                    else:
+                        self.param_names.append(key)
+                else:
+                    if self._verbose.data:
                         print(f"\nSampling:")
                         print(f"\tTraining points generated using {value['train']['sampling']} sampling")
                         print(f"\tNumber of training points: {value['train']['points']}\n")
@@ -160,6 +164,7 @@ class CTSNN(NN):
 
         else:
             num_params = 9
+            self.param_names = ["FRQi", "theta", "phi", "Bmod", "Ne", "Te", "Ti", "Vd", "Ri"]
 
         cts_params_filename = self.train_data_dir / "scanem_list_var.bin"
         cts_params = np.fromfile(cts_params_filename, dtype=np.float64) 
@@ -187,7 +192,7 @@ class CTSNN(NN):
         spectra = np.memmap(spectra_file, np.float64, mode='r', shape=(num_eval_points,num_freqs))
         self.eval_points["cts_spectra"] = spectra 
 
-        self.truncate_data()
+        self.truncate_spectra()
 
         self.normalize_params()
 
@@ -212,6 +217,10 @@ class CTSNN(NN):
         return
 
     def normalize_params(self):
+        '''
+        Method to normalize and truncate (remove non-varying) parameters
+        '''
+
         # Load train and test data from data folder
         if Path.is_file(self.data_dir / "param_ranges.json"):
             param_ranges = load_json(self.data_dir / "param_ranges.json")
@@ -229,26 +238,41 @@ class CTSNN(NN):
             self.eval_points["cts_params"] = self.eval_points["cts_params"]
         return
     
-    def normalize_spectra(self):  
-        self.train_points["cts_spectra"] = normalize(self.train_points["cts_spectra"], norm='max')
-        self.eval_points["cts_spectra"] = normalize(self.eval_points["cts_spectra"], norm='max')
+    def normalize_spectra(self, norm='max'):  
+        '''
+        Method to normalize spectra according to some specified norm
+        '''
+        self.train_points["cts_spectra"] = normalize(self.train_points["cts_spectra"], norm=norm)
+        self.eval_points["cts_spectra"] = normalize(self.eval_points["cts_spectra"], norm=norm)
         pass
     
-    def scale_spectra(self):
+    def scale_spectra(self, scaling = None):
+        '''
+        Method to scale spectra according to some scaling. If no scaling is specified
+        '''
+        if scaling is None:
+            scaling = self.spectra_scaling
+
         if self._verbose.data:
-            print(f"Scaling spectra with a factor of {self.spectra_scaling}")
-        self.train_points["cts_spectra"] = self.train_points["cts_spectra"]*self.spectra_scaling
-        self.eval_points["cts_spectra"] = self.eval_points["cts_spectra"]*self.spectra_scaling
+            print(f"Scaling spectra with a factor of {scaling}")
+        self.train_points["cts_spectra"] = self.train_points["cts_spectra"]*scaling
+        self.eval_points["cts_spectra"] = self.eval_points["cts_spectra"]*scaling
         pass
 
     def scale_output(self):
+        '''
+        Method to scale the output back from having been normalized or scaled
+        '''
         pass
 
-    def truncate_data(self):
+    def truncate_spectra(self):
+        '''
+        method to truncate the spectra so the peaks at the edges are filtered out
+        '''
         if self.truncate_spectra_to != self.train_points["cts_spectra"].shape[1]:
             if self._verbose.data:
                 print(f"Truncating data from {self.train_points["cts_spectra"].shape[1]} to {self.truncate_spectra_to} frequency bins...\n")
-            num_truncate = self.train_points["cts_spectra"].shape[1] - self.net.output_dim
+            num_truncate = self.train_points["cts_spectra"].shape[1] - self.truncate_spectra_to
             if num_truncate % 2 == 0:
                 num_truncate_l = num_truncate // 2
                 num_truncate_r = num_truncate // 2
@@ -265,6 +289,9 @@ class CTSNN(NN):
         return
 
     def numpy_to_jax_data(self):
+        '''
+        Method to convert from numpy arrays or memmaps to jax arrays
+        '''
         self.train_points["cts_spectra"] = jnp.asarray(self.train_points["cts_spectra"])
         self.eval_points["cts_spectra"] = jnp.asarray(self.eval_points["cts_spectra"])
 
@@ -342,26 +369,52 @@ class CTSNN(NN):
         ctsplot.plot_results(netmap(self.forward)(self.params, self.eval_points["cts_params"]), self.eval_true_val["cts_spectra"],
                              self.dir.figure_dir, save=save, dpi=self.plot_settings["dpi"])
         
-    def do_every(self, epoch: int | None = None, loss_term_fun: Callable | None = None, **kwargs):
+    def plot_loss_history(self):
+        with open(self.dir.log_dir.joinpath('all_train_losses.npy'), "rb") as f:
+            train_loss_history = jnp.load(f)
+
+        with open(self.dir.log_dir.joinpath('all_eval_losses.npy'), "rb") as f:
+            eval_loss_history = jnp.load(f)
+
+        plot_loss_history(train_loss_history, eval_loss_history=eval_loss_history, stepsize=self.logging.log_every, dir=self.dir.figure_dir, file_name="loss_history", format="png")
+
+        return
+
+    def do_every(self, epoch: int | None = None, loss_term_fun: Callable | None = None, last = False, **kwargs):
         
-        # plot_every = self.result_plots.plot_every
-        # log_every = self.logging.log_every
-        # do_log = self.logging.do_logging
+        log_every = self.logging.log_every
+        do_log = self.logging.do_logging
         checkpoint_every = self.train_settings.checkpoint_every
 
-        # if do_log and epoch % log_every == log_every-1:
-        #     loss_terms = loss_term_fun(**kwargs)
-        #     if epoch // log_every == 0:
-        #         self.all_losses = jnp.zeros((0, loss_terms.shape[0]))
-        #     self.all_losses = self.log_scalars(loss_terms, self.loss_names, all_losses=self.all_losses, log=False)
+        if do_log & (epoch % log_every == log_every-1):
+            loss_terms = loss_term_fun(params=self.params, inputs=self.train_points, true_val=self.train_true_val, **kwargs)
+            if epoch // log_every == 0:
+                self.all_train_losses = []#jnp.zeros((0, loss_terms.shape[0]))
+            self.all_train_losses.append(loss_terms)#jnp.append(self.all_train_losses, loss_terms)
 
-        # if plot_every and epoch % plot_every == plot_every-1:
-        #     self.plot_results(save=False, log=True, step=epoch)
+            loss_terms = loss_term_fun(params=self.params, inputs=self.eval_points, true_val=self.eval_true_val, **kwargs)
+            if epoch // log_every == 0:
+                self.all_eval_losses = []#jnp.zeros((0, loss_terms.shape[0]))
+            self.all_eval_losses.append(loss_terms)#jnp.append(self.all_eval_losses, loss_terms)
 
         if epoch % checkpoint_every == checkpoint_every-1:
             self.write_model(step=epoch+1)
-            if hasattr(self, "all_losses"):
-                with open(self.dir.log_dir.joinpath('all_losses.npy'), "wb") as f:
-                    jnp.save(f, self.all_losses)
+            if hasattr(self, "all_train_losses"):
+                with open(self.dir.log_dir.joinpath('all_train_losses.npy'), "wb") as f:
+                    jnp.save(f, jnp.array(self.all_train_losses))
+            
+            if hasattr(self, "all_eval_losses"):
+                with open(self.dir.log_dir.joinpath('all_eval_losses.npy'), "wb") as f:
+                    jnp.save(f, jnp.array(self.all_eval_losses))
+
+        if last:
+            self.write_model(step=epoch+1)
+            if hasattr(self, "all_train_losses"):
+                with open(self.dir.log_dir.joinpath('all_train_losses.npy'), "wb") as f:
+                    jnp.save(f, jnp.array(self.all_train_losses))
+            
+            if hasattr(self, "all_eval_losses"):
+                with open(self.dir.log_dir.joinpath('all_eval_losses.npy'), "wb") as f:
+                    jnp.save(f, jnp.array(self.all_eval_losses))
         
         return

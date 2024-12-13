@@ -65,6 +65,17 @@ def get_plot_variables(xlim, ylim, grid = 201):
     return X, Y, plotpoints
 
 
+def plot_loss_history(train_loss_history, dir: str, file_name: str, format: str = "png", eval_loss_history = None, stepsize = 1):
+    if eval_loss_history is None:
+        plt.semilogy(jnp.linspace(0, 2*jnp.length(train_loss_history), 2), train_loss_history)
+    else:
+        plt.semilogy(jnp.arange(0, 2*jnp.size(train_loss_history), 2), train_loss_history, label='Training loss')
+        plt.semilogy(jnp.arange(0, 2*jnp.size(eval_loss_history), 2), eval_loss_history, c='r', label='Evaluation loss')
+    
+    save_fig(dir, file_name, format)
+    return
+
+
 # def log_plot(X, Y, Z, name, log_dir, step=None, vmin=None, vmax=None, logscale=False, dpi=50):
 #     fig = plt.figure(figsize=(10,10), dpi=dpi)
 #     p = plt.contourf(X, Y, Z, vmin=vmin, vmax=vmax, levels=_CLEVELS)
