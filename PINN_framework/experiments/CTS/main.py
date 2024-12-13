@@ -100,11 +100,9 @@ class NN01(CTSNN):
                                                                                                 eval_func=partial(self.eval, metric=self.eval_settings.error_metric)
                                                                                                 )
             
-            self.do_every(epoch, jitted_loss, 
-                             params=self.params, 
-                             inputs=self.train_points, 
-                             true_val=self.train_true_val, 
-                             update_key=update_key)
+            self.do_every(epoch, jitted_loss, update_key=update_key, last=epoch==max_epochs-1)
+        
+        self.plot_loss_history()
 
         if self._verbose.training:
             print("###############################################################\n\n")
