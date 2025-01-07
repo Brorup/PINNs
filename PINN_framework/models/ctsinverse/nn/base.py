@@ -90,8 +90,17 @@ class CTSINN(CTSNN):
 
         return output
 
-    def scale_output(self):
-        pass
+    def scale_output(self, params):
+        """
+        Method to scale the output back from having been normalized or scaled
+        """
+        for index, param_range in enumerate(self.param_ranges):
+            if param_range[0] == param_range[1]:
+                params[:, index] = param[:, index] * param_range[0]
+            else:
+                params[:, index] = params[:, index] * (param_range[1] - param_range[0]) + param_range[0]
+
+        return params
 
     def eval(self, metric: str  = "all", verbose = None, **kwargs):
         """

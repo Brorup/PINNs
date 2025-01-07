@@ -217,16 +217,20 @@ class CTSNN(NN):
         return
 
     def normalize_params(self):
-        '''
+        """
         Method to normalize and truncate (remove non-varying) parameters
-        '''
+        """
 
         # Load train and test data from data folder
         if Path.is_file(self.data_dir / "param_ranges.json"):
+            self.param_ranges = []
+            
             param_ranges = load_json(self.data_dir / "param_ranges.json")
 
             for index, (key, value) in enumerate(param_ranges.items()):
                 if key != 'sampling':
+                    self.param_ranges.append([value['min'], value['max']])
+                    
                     if value['min'] == value['max']:
                         self.train_points["cts_params"][:, index] = self.train_points["cts_params"][:, index] / value['min']
                         self.eval_points["cts_params"][:, index] = self.eval_points["cts_params"][:, index] / value['min']
@@ -239,17 +243,17 @@ class CTSNN(NN):
         return
     
     def normalize_spectra(self, norm='max'):  
-        '''
+        """
         Method to normalize spectra according to some specified norm
-        '''
+        """
         self.train_points["cts_spectra"] = normalize(self.train_points["cts_spectra"], norm=norm)
         self.eval_points["cts_spectra"] = normalize(self.eval_points["cts_spectra"], norm=norm)
-        pass
+        return
     
     def scale_spectra(self, scaling = None):
-        '''
+        """
         Method to scale spectra according to some scaling. If no scaling is specified
-        '''
+        """
         if scaling is None:
             scaling = self.spectra_scaling
 
@@ -257,18 +261,21 @@ class CTSNN(NN):
             print(f"Scaling spectra with a factor of {scaling}")
         self.train_points["cts_spectra"] = self.train_points["cts_spectra"]*scaling
         self.eval_points["cts_spectra"] = self.eval_points["cts_spectra"]*scaling
-        pass
+        return
 
-    def scale_output(self):
-        '''
+    def scale_output(self, spectra):
+        """
         Method to scale the output back from having been normalized or scaled
-        '''
-        pass
+        """
+        if scaling is None:
+            scaling = self.spectra_scaling
 
+        return spectra / scaling
+        
     def truncate_spectra(self):
-        '''
+        """
         method to truncate the spectra so the peaks at the edges are filtered out
-        '''
+        """
         if self.truncate_spectra_to != self.train_points["cts_spectra"].shape[1]:
             if self._verbose.data:
                 print(f"Truncating data from {self.train_points["cts_spectra"].shape[1]} to {self.truncate_spectra_to} frequency bins...\n")
@@ -289,9 +296,9 @@ class CTSNN(NN):
         return
 
     def numpy_to_jax_data(self):
-        '''
+        """
         Method to convert from numpy arrays or memmaps to jax arrays
-        '''
+        """
         self.train_points["cts_spectra"] = jnp.asarray(self.train_points["cts_spectra"])
         self.eval_points["cts_spectra"] = jnp.asarray(self.eval_points["cts_spectra"])
 
