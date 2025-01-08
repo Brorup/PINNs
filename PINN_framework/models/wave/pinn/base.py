@@ -277,32 +277,10 @@ class WavePINN(PINN):
             return sq(out)
         return sqe(out, true_val)
 
-    def eval(self, point_type: str = "all", metric: str  = "all", **kwargs):
+    def eval(self, point_type: str = "all", metric: str  = "all", verbose = None, **kwargs):
         """
         Evaluates the error using the specified metric.
         """
-        if self._verbose.evaluation:
-            print("\nEvaluation:\n")
-
-        do_all_metrics = False
-        match metric.lower():
-            case "all":
-                do_all_metrics = True
-            case "l2-rel":
-                metric_fun = jax.jit(L2rel)
-                metric_description = "L2 relative error"
-            case "l2rel":
-                metric_fun = jax.jit(L2rel)
-                metric_description = "L2 relative error"
-            case "mse":
-                metric_fun = jax.jit(mse)
-                metric_description = "Mean squared error"
-            case "maxabse":
-                metric_fun = jax.jit(maxabse)
-                metric_description = "Max abs error"
-            case _:
-                print(f"Unknown metric: '{metric}'. Default ('L2-rel') is used for evaluation.")
-                metric_fun = jax.jit(L2rel)
 
         if point_type == "all":
             #TODO maybe make sure dictionarires are sorted the same way
@@ -314,34 +292,8 @@ class WavePINN(PINN):
         
         u = netmap(self.forward)(self.params, points).squeeze()
         
-        if do_all_metrics:
-            metric_funs = [jax.jit(L2rel), jax.jit(mse), jax.jit(maxabse)]
-            metric_descriptions = ["L2 relative error", "Mean squared error", "Max abs error"]
-        else:
-            metric_funs = [metric_fun]
-            metric_descriptions = [metric_description]
+        err = self._eval(u, u_true, metric, verbose)
         
-        for (metric_fun, metric_description) in zip(metric_funs, metric_descriptions):
-            err = metric_fun(u, u_true)
-
-            attr_name = "eval_result"
-
-            if hasattr(self, attr_name):
-                if isinstance(self.eval_result, dict):
-                    self.eval_result[metric] = err
-                else:
-                    raise TypeError(f"Attribute '{attr_name}' is not a dictionary. "
-                                    f"Evaluation error cannot be added.")
-            else:
-                self.eval_result = {metric: err}
-            
-            if self._verbose.evaluation:
-                print(f"{metric_description} of model: {err:.2g}")
-        
-        if self._verbose.evaluation:
-            print("\n###############################################################\n\n")
-            sys.stdout.flush()
-
         return err
 
     def plot_results(self, save=True, log=False, step=None):

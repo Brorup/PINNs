@@ -1,5 +1,6 @@
 from typing import override
 from collections import OrderedDict
+import sys
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -13,7 +14,7 @@ from .base import Model
 from .networks import setup_network
 from utils.plotting import save_fig
 from utils.utils import timer
-
+from models.loss import L2rel, mse, maxabse, ms, sq, sqe
 
 class PINN(Model):
     """
@@ -94,23 +95,6 @@ class PINN(Model):
         parameters. For external use.
         """
         return self.forward(self.params, *args, **kwargs)
-
-    # def log_scalars(self,
-    #                 scalars,
-    #                 scalar_names: str | None = None,
-    #                 tag: str | None = None,
-    #                 step: int | None = None,
-    #                 log: bool = False,
-    #                 all_losses: jnp.ndarray | None = None):
-    #     if log:
-    #         writer = SummaryWriter(log_dir=self.dir.log_dir)
-    #         writer.add_scalars(tag,
-    #                         {name: np.array(loss) for name, loss in zip(scalar_names, scalars)},
-    #                         global_step=step)
-                    
-    #         writer.close()
-        
-    #     return jnp.concatenate([all_losses, scalars.reshape(-1, scalars.shape[0])])
     
     def plot_training_points(self, save=True, log=False, step=None):
         
@@ -131,3 +115,63 @@ class PINN(Model):
             save_fig(self.dir.figure_dir, "training_points", "png", plt.gcf())
         
         plt.close()
+        
+    def _eval(self, u, u_true, metric: str  = "all", verbose = None, **kwargs):
+        """
+        Evaluates the error using the specified metric.
+        """
+        if verbose is None:
+            verbose = self._verbose.evaluation
+
+        if verbose:
+            print("\nEvaluation:\n")
+
+        do_all_metrics = False
+        match metric.lower():
+            case "all":
+                do_all_metrics = True
+            case "l2-rel":
+                metric_fun = jax.jit(L2rel)
+                metric_description = "L2 relative error"
+            case "l2rel":
+                metric_fun = jax.jit(L2rel)
+                metric_description = "L2 relative error"
+            case "mse":
+                metric_fun = jax.jit(mse)
+                metric_description = "Mean squared error"
+            case "maxabse":
+                metric_fun = jax.jit(maxabse)
+                metric_description = "Max abs error"
+            case _:
+                print(f"Unknown metric: '{metric}'. Default ('L2-rel') is used for evaluation.")
+                metric_fun = jax.jit(L2rel)
+        
+        if do_all_metrics:
+            metric_funs = [jax.jit(L2rel), jax.jit(mse), jax.jit(maxabse)]
+            metric_descriptions = ["L2 relative error", "Mean squared error", "Max abs error"]
+        else:
+            metric_funs = [metric_fun]
+            metric_descriptions = [metric_description]
+        
+        for (metric_fun, metric_description) in zip(metric_funs, metric_descriptions):
+            err = metric_fun(u, u_true)
+
+            attr_name = "eval_result"
+
+            if hasattr(self, attr_name):
+                if isinstance(self.eval_result, dict):
+                    self.eval_result[metric] = err
+                else:
+                    raise TypeError(f"Attribute '{attr_name}' is not a dictionary. "
+                                    f"Evaluation error cannot be added.")
+            else:
+                self.eval_result = {metric: err}
+            
+            if self._verbose.evaluation:
+                print(f"{metric_description} of model: {err:.2g}")
+        
+        if verbose:
+            print("\n###############################################################\n\n")
+            sys.stdout.flush()
+
+        return err

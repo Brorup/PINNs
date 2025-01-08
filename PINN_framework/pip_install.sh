@@ -8,3 +8,4 @@ python -m pip install --upgrade optax
 python -m pip install --upgrade orbax-checkpoint 
 python -m pip install --upgrade torch --index-url https://download.pytorch.org/whl/cpu
 python -m pip install --upgrade scikit-learn
+python -m pip install --upgrade f90nml
