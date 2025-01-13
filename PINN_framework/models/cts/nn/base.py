@@ -148,13 +148,18 @@ class CTSNN(NN):
             param_ranges = load_json(self.data_dir / "param_ranges.json")
             num_params = len(param_ranges.keys()) - 1
             self.param_names = []
+            self.varying_params = []
             if self._verbose.data:
                 print("Parameter ranges:")
             for (key, value) in param_ranges.items():
                 if key != 'sampling':
                     if self._verbose.data:
                         print(f"\t{key}: \t[{value['min']}, {value['max']}]")
-                        self.param_names.append(key)
+                    self.param_names.append(key)
+                    if value['min'] == value["max"]:
+                        self.varying_params.append(False)
+                    else:
+                        self.varying_params.append(True)
                 else:
                     if self._verbose.data:
                         print(f"\nSampling:")
@@ -183,7 +188,8 @@ class CTSNN(NN):
         spectra = np.memmap(spectra_file, np.float64, mode='r', shape=(num_data_points,num_freqs))
 
         # Split train and validation data
-        train_cts_params, validation_cts_params, train_spectra, validation_spectra = train_test_split(cts_params, spectra, test_size=0.1) #TODO un-hardcode train test split size here
+        self._key, train_test_key = jax.random.split(self._key, 2)
+        train_cts_params, validation_cts_params, train_spectra, validation_spectra = train_test_split(cts_params, spectra, test_size=0.1, random_state=np.random.RandomState(train_test_key)) #TODO un-hardcode train test split size here
         self.train_points = {"cts_params": train_cts_params, "cts_spectra": train_spectra}
         self.validation_points = {"cts_params": validation_cts_params, "cts_spectra": validation_spectra}
 

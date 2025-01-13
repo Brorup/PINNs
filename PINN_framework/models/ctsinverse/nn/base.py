@@ -102,6 +102,20 @@ class CTSINN(CTSNN):
 
         return params
 
+    def early_stopping(self):
+        """
+        Stops training early if validation loss stops decreasing
+        """
+        
+        points = self.validation_points["cts_spectra"]
+        u_true = self.validation_true_val["cts_params"]
+        
+        err = self.early_stopping_jittable(points, u_true, self.params)
+
+        stop = self._early_stopping(err)
+
+        return stop
+
     def eval(self, metric: str  = "all", verbose = None, **kwargs):
         """
         Evaluates the error using the specified metric.
@@ -117,7 +131,9 @@ class CTSINN(CTSNN):
         return err
 
     def plot_results(self, save=True):
+        ctsplot.plot_results(netmap(self.forward)(self.params, self.train_points["cts_spectra"]), self.train_true_val["cts_params"], self.param_names,
+                             self.dir.figure_dir, name="train_data", varying_params=self.varying_params, save=save, dpi=self.plot_settings["dpi"])
         ctsplot.plot_results(netmap(self.forward)(self.params, self.eval_points["cts_spectra"]), self.eval_true_val["cts_params"], self.param_names,
-                             self.dir.figure_dir, save=save, dpi=self.plot_settings["dpi"])
+                             self.dir.figure_dir, name="test_data", varying_params=self.varying_params, save=save, dpi=self.plot_settings["dpi"])
         
         

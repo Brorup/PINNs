@@ -8,7 +8,7 @@
         "figure_dir": "/home/antj/PINNs/PINN_framework/experiments/CTSinverse/figures",
         "model_dir": "/home/antj/PINNs/PINN_framework/experiments/CTSinverse/models",
         "log_dir": "/home/antj/PINNs/PINN_framework/experiments/CTSinverse/logs",
-        "data_dir": "/home/antj/PINNs/PINN_framework/data/CTS"
+        "data_dir": "/home/antj/PINNs/PINN_framework/data/CTS/scanem_list"
     },
     
     "verbosity": {
@@ -24,7 +24,7 @@
         "beam_overlap": 20,
         "input_power": 500000, 
         "train": {
-            "iterations": 5000,
+            "iterations": 50000,
             "optimizer": "adam",
             "loss_fn": "mse",
             "update_scheme": "unweighted",
@@ -63,6 +63,10 @@
                 "loss_emphasis": 2,
                 "replace": true
             },
+            "early_stop_vars": {
+                "patience": 1000,
+                "min_delta": 0.001
+            },
             "jitted_update": true
         },
         "eval": {
@@ -78,7 +82,7 @@
                     "specifications": {
                         "input_dim": 1000,
                         "output_dim": 9,
-                        "hidden_dims": [2000, 2000, 2000, 2000],
+                        "hidden_dims": [64, 64, 64, 64],
                         "activation": "tanh",
                         "initialization": "glorot_normal"                    
                     }
@@ -98,7 +102,7 @@
 
     "logging": {
         "do_logging": true,
-        "log_every": 2,
+        "log_every": 1,
         "print_every": 1000
     }
 }
