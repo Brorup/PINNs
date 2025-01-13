@@ -177,6 +177,7 @@ class TrainingSettings(Settings):
     update_kwargs: dict | None = None
     update_settings: WeightSchemeSettings = field(default_factory=lambda: UnweightedSettings())
     learning_rate: float = 1e-3
+    train_validation_split: float | None = None
     batch_size: int | None = None
     decay_rate: float | None = None
     decay_steps: int | None = None

@@ -414,7 +414,13 @@ def parse_training_settings(settings_dict: dict) -> TrainingSettings:
         if settings_dict["batch_size"] != -1:
             check_pos_int(settings_dict["batch_size"], "batch_size")
             settings.batch_size = settings_dict["batch_size"]
-    
+        
+    # train_validation_split
+    if settings_dict.get("train_validation_split") is not None:
+        check_unit(settings_dict["train_validation_split"], "train_validation_split")
+        settings.train_validation_split = 1 - settings_dict["train_validation_split"]
+        # subtracting from 1 here to convert from size of validation split to size of train split
+
     # decay_rate
     if settings_dict.get("decay_rate") is not None:
         check_pos(settings_dict["decay_rate"], "decay_rate")
@@ -636,6 +642,18 @@ def check_pos(option, name, strict = True):
     if strict:
         satisfied = (option > 0)
 
-    if not satisfied > 0:
+    if not satisfied:
         raise SettingsInterpretationError(f"Option '{name}' must be positive.")
+    return
+
+def check_unit(option, name, strict = True):
+    """
+    Ensure that input is in unit interval
+    """
+    satisfied = (option >= 0) and (option <= 1)
+    if strict:
+        satisfied = (option > 0) and (option < 1)
+
+    if not satisfied:
+        raise SettingsInterpretationError(f"Option '{name}' must be in unit interval")
     return

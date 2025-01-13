@@ -189,7 +189,7 @@ class CTSNN(NN):
 
         # Split train and validation data
         self._key, train_test_key = jax.random.split(self._key, 2)
-        train_cts_params, validation_cts_params, train_spectra, validation_spectra = train_test_split(cts_params, spectra, test_size=0.1, random_state=np.random.RandomState(train_test_key)) #TODO un-hardcode train test split size here
+        train_cts_params, validation_cts_params, train_spectra, validation_spectra = train_test_split(cts_params, spectra, test_size=self.train_settings.train_validation_split, random_state=np.random.RandomState(train_test_key))
         self.train_points = {"cts_params": train_cts_params, "cts_spectra": train_spectra}
         self.validation_points = {"cts_params": validation_cts_params, "cts_spectra": validation_spectra}
 
