@@ -359,21 +359,15 @@ def parse_training_settings(settings_dict: dict) -> TrainingSettings:
     
     # loss_function
     if settings_dict.get("loss_fn") is not None:
-        settings.loss_fn = settings_dict["loss_fn"].lower()
-        match settings_dict["loss_fn"].lower():
-            case "mse":
-                settings.loss_fn = mse
-            case "mae":
-                settings.loss_fn = mae
-            case "maxabse":
-                settings.loss_fn = maxabse
-            case s if s[0].isdigit():
-                settings.loss_fn = pnorm(find_first_integer(s)) 
-            case _ :
-                raise ValueError("Unrecognized loss_fn") 
+        settings.loss_fn = parse_loss_settings(settings_dict["loss_fn"], "loss_fn")
     else:
-        settings.loss_fn = "mse"
+        settings.loss_fn = mse
             
+    # validation metric
+    if settings_dict.get("validation_metric") is not None:
+        settings.validation_metric = parse_loss_settings(settings_dict["validation_metric"], "validation_metric")
+    else:
+        settings.validation_metric = mse
 
     # update_scheme
     if settings_dict.get("update_scheme") is not None:
@@ -469,11 +463,13 @@ def parse_evaluation_settings(settings_dict: dict) -> EvaluationSettings:
     # error_metric
     if settings_dict.get("error_metric") is not None:
         settings.error_metric = settings_dict["error_metric"]
+    else:
+        settings.error_metric = mse
     
     return settings
 
 
-def parse_loss_settings(loss_str: str) -> Callable:
+def parse_loss_settings(loss_str: str, name) -> Callable:
     """
     Parses loss function
     """
@@ -488,9 +484,7 @@ def parse_loss_settings(loss_str: str) -> Callable:
         case s if s[0].isdigit():
             return pnorm(find_first_integer(s)) 
         case _ :
-            raise ValueError("Unrecognized loss_fn") 
-    
-    return
+            raise ValueError(f"Unrecognized '{name}', metric might not yet be supported") 
 
 
 def parse_directory_settings(settings_dict: dict,
@@ -656,4 +650,4 @@ def check_unit(option, name, strict = True):
 
     if not satisfied:
         raise SettingsInterpretationError(f"Option '{name}' must be in unit interval")
-    return
+    return    

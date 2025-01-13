@@ -173,6 +173,8 @@ class TrainingSettings(Settings):
     sampling: dict | None = None
     iterations: int = 1000
     optimizer: Callable = SupportedOptimizers.adam
+    loss_fn: Callable | None = None
+    validation_metric: Callable | None = None
     update_scheme: str = "unweighted"
     update_kwargs: dict | None = None
     update_settings: WeightSchemeSettings = field(default_factory=lambda: UnweightedSettings())

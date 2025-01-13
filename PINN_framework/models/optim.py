@@ -113,14 +113,14 @@ def _verbose_update(print_every = LoggingSettings.print_every):
                       f"Learning rate: {learning_rate:2.2e}    "
                       f"Weighted loss: {total_loss:2.2e}    "
                       f"Unweighted loss: {jnp.sum(aux):2.2e}")
-                print("Weights:     ", end="")
+                print("Weights:           ", end="")
                 [print(f"{w:2.2e}", end="  ") for w in ww]
                 print("")
-                print("Loss terms:  ", end="")
+                print("Loss terms:        ", end="")
                 [print(f"{l:2.2e}", end="  ") for l in aux]
                 if eval_func:
                     eval_err = eval_func(verbose=False)
-                    print(f"\nTest error:  {eval_err:2.2e}")
+                    print(f"\nValidation error:  {eval_err:2.2e}")
                 print("\n\n")
                 sys.stdout.flush()
 

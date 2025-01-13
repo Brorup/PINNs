@@ -27,27 +27,11 @@
             "iterations": 100000,
             "optimizer": "adam",
             "loss_fn": "4",
+            "validation_metric": "mse",
             "update_scheme": "unweighted",
             "update_kwargs": {
-                "softadapt": {
-                    "order": 4,
-                    "beta": 0.1,
-                    "loss_weighted": false,
-                    "normalized": false,
-                    "update_every": 10,
-                    "running_average": 0.9
-                },
-                "gradnorm": {
-                    "normalized": true,
-                    "update_every": 10,
-                    "running_average": 0.9
-                },
                 "unweighted": {
                     "normalized": true
-                },
-                "weighted": {
-                    "weights": [5, 5, 2],
-                    "normalized": false
                 }
             },
             "learning_rate": 1e-3,
@@ -69,9 +53,7 @@
             },
             "jitted_update": true
         },
-        "eval": {
-            "error_metric": "maxabse"
-        }
+        "eval": {}
     },
 
     "model": {

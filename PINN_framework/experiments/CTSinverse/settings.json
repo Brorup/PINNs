@@ -27,27 +27,11 @@
             "iterations": 50000,
             "optimizer": "adam",
             "loss_fn": "mse",
+            "validation_metric": "mse",
             "update_scheme": "unweighted",
             "update_kwargs": {
-                "softadapt": {
-                    "order": 4,
-                    "beta": 0.1,
-                    "loss_weighted": false,
-                    "normalized": false,
-                    "update_every": 10,
-                    "running_average": 0.9
-                },
-                "gradnorm": {
-                    "normalized": true,
-                    "update_every": 10,
-                    "running_average": 0.9
-                },
                 "unweighted": {
                     "normalized": true
-                },
-                "weighted": {
-                    "weights": [5, 5, 2],
-                    "normalized": false
                 }
             },
             "learning_rate": 1e-3,
@@ -57,22 +41,13 @@
             "decay_steps": 2000,
             "transfer_learning": false,
             "checkpoint_every": 5000,
-            "resampling": {
-                "do_resampling": false,
-                "resample_steps": 5000,
-                "resample_num": 100,
-                "loss_emphasis": 2,
-                "replace": true
-            },
             "early_stop_vars": {
                 "patience": 1000,
                 "min_delta": 0.001
             },
             "jitted_update": true
         },
-        "eval": {
-            "error_metric": "maxabse"
-        }
+        "eval": {}
     },
 
     "model": {

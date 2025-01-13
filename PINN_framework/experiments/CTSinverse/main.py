@@ -97,7 +97,7 @@ class NN01(CTSINN):
                                                                                                 epoch=epoch,
                                                                                                 learning_rate=self.schedule(epoch),
                                                                                                 batch_num=batch_num,
-                                                                                                eval_func=partial(self.eval, metric=self.eval_settings.error_metric)
+                                                                                                eval_func=partial(self.validation, metric=self.train_settings.validation_metric.__name__)
                                                                                                 )
             
             if self.early_stopping():

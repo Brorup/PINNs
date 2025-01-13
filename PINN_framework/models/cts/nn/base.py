@@ -368,6 +368,20 @@ class CTSNN(NN):
         err = self._eval(u, u_true, metric, verbose)
         
         return err
+    
+    def validation(self, metric: Callable | str  = "all", verbose = None, **kwargs):
+        """
+        Evaluates the error using the specified metric.
+        """
+        
+        points = self.validation_points["cts_params"]
+        u_true = self.validation_true_val["cts_spectra"]
+        
+        u = netmap(self.forward)(self.params, points).squeeze()
+        
+        err = self._eval(u, u_true, metric, verbose)
+        
+        return err
 
     def plot_results(self, save=True, log=False, step=None):
         ctsplot.plot_results(netmap(self.forward)(self.params, self.train_points["cts_params"]), self.train_true_val["cts_spectra"],
