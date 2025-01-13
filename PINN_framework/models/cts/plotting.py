@@ -11,6 +11,7 @@ from utils.plotting import (
     #log_plot,
     get_plot_variables
 )
+from models.loss import maxabse
 
 
 _CLEVELS = 401
@@ -45,7 +46,6 @@ def plot_loss(
             ax[i].semilogy(epochs, loss_arr[:, loss_map[plot_split[i]]], linewidth=5)
             ax[i].tick_params(axis='x', labelsize=_FONTSIZE)
             ax[i].tick_params(axis='t', labelsize=_FONTSIZE)
-            # ax[i].fill_between(epochs[epochs % 10000 >= 5000], 0, facecolor='gray', alpha=.5)
     else:
         for i in range(num_plots):
             ax[i].semilogy(loss_arr[:, loss_map[plot_split[i]]], linewidth=5)
@@ -57,25 +57,39 @@ def plot_loss(
     return
 
 
-def plot_results(prediction, data_true, fig_dir, save=True, dpi=50):
-    
+def plot_results(prediction, data_true, fig_dir, type: str | None = None, save=True, dpi=50):
+    if type is None:
+        type = "eval"
+
     if save:
-        plot_prediction(prediction, data_true, fig_dir=fig_dir, name="Prediction", dpi=dpi)
+        plot_prediction(prediction, data_true, fig_dir=fig_dir, type=type, dpi=dpi)
 
     return
 
-def plot_prediction(prediction, data_true, *, fig_dir, name,
+def plot_prediction(prediction, data_true, *, fig_dir, type,
                    extension="png", dpi=100):
     """
     Function for plotting potential function.
     """    
-    for i in range(prediction.shape[0]):
-        if i > 20:
-            break
-        
-        plt.plot(prediction[i], label='Prediction')
-        plt.plot(data_true[i], c='r', label='True')
-        plt.legend()
-        save_fig(fig_dir, f"test_data_{i}", extension, dpi=dpi)
+    num_plots = 20
+    if type.lower() == "train":
+        plot_names = "train_prediction"
+    else:
+        plot_names = "test_prediction"
+
+    errors = jax.vmap(maxabse, in_axes=(0, 0))(prediction, data_true)
+    sorted_errors_idx = jnp.argsort(errors)
+    idx = np.round(np.linspace(0, len(sorted_errors_idx) - 1, num_plots)).astype(int)
+    error_lim_lower = 1e-6
+    error_lim_upper = jnp.max(jnp.abs(prediction - data_true))
+
+    for plot_num, i in enumerate(sorted_errors_idx[idx]):
+        fig, ax = plt.subplots(1, 2, figsize=(12, 5))
+        ax[0].plot(prediction[i], label='Prediction')
+        ax[0].plot(data_true[i], c='r', label='True')
+        ax[0].legend()
+        ax[1].semilogy(jnp.abs(prediction[i] - data_true[i]), label='Error')
+        ax[1].set_ylim(error_lim_lower, error_lim_upper)
+        save_fig(fig_dir, f"{plot_names}_{plot_num}", extension, dpi=dpi)
         plt.clf()
     return

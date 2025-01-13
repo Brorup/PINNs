@@ -8,6 +8,7 @@ import optax
 from .base import Model
 from .networks import setup_network
 from models.loss import L2rel, mse, maxabse, ms, sq, sqe
+from models.networks import netmap
 
 class NN(Model):
     """
@@ -99,27 +100,31 @@ class NN(Model):
         match metric.lower():
             case "all":
                 do_all_metrics = True
+                def unjitted_L2rel(u, u_true): return jnp.max(jax.vmap(L2rel, in_axes=(0, 0))(u, u_true))
+                def unjitted_mse(u, u_true): return jnp.max(jax.vmap(mse, in_axes=(0, 0))(u, u_true))
+                def unjitted_maxabse(u, u_true): return jnp.max(jax.vmap(maxabse, in_axes=(0, 0))(u, u_true))
             case "l2-rel":
-                metric_fun = jax.jit(L2rel)
-                metric_description = "L2 relative error"
+                def unjitted_metric_fun(u, u_true): return jnp.max(jax.vmap(L2rel, in_axes=(0, 0))(u, u_true))
+                metric_description = "Maximum L2 relative error"
             case "l2rel":
-                metric_fun = jax.jit(L2rel)
-                metric_description = "L2 relative error"
+                def unjitted_metric_fun(u, u_true): return jnp.max(jax.vmap(L2rel, in_axes=(0, 0))(u, u_true))
+                metric_description = "Maximum L2 relative error"
             case "mse":
-                metric_fun = jax.jit(mse)
-                metric_description = "Mean squared error"
+                def unjitted_metric_fun(u, u_true): return jnp.max(jax.vmap(mse, in_axes=(0, 0))(u, u_true))
+                metric_description = "Maximum Mean squared error"
             case "maxabse":
-                metric_fun = jax.jit(maxabse)
-                metric_description = "Max abs error"
+                def unjitted_metric_fun(u, u_true): return jnp.max(jax.vmap(maxabse, in_axes=(0, 0))(u, u_true))
+                metric_description = "Maximum Max abs error"
             case _:
                 print(f"Unknown metric: '{metric}'. Default ('L2-rel') is used for evaluation.")
-                metric_fun = jax.jit(L2rel)
-        
+                def unjitted_metric_fun(u, u_true): return jnp.max(jax.vmap(L2rel, in_axes=(0, 0))(u, u_true))
+
+
         if do_all_metrics:
-            metric_funs = [jax.jit(L2rel), jax.jit(mse), jax.jit(maxabse)]
-            metric_descriptions = ["L2 relative error", "Mean squared error", "Max abs error"]
+            metric_funs = [jax.jit(unjitted_L2rel), jax.jit(unjitted_mse), jax.jit(unjitted_maxabse)]
+            metric_descriptions = ["Maximum L2 relative error", "Maximum Mean squared error", "Maximum Max abs error"]
         else:
-            metric_funs = [metric_fun]
+            metric_funs = [jax.jit(unjitted_metric_fun)]
             metric_descriptions = [metric_description]
         
         for (metric_fun, metric_description) in zip(metric_funs, metric_descriptions):
@@ -144,42 +149,3 @@ class NN(Model):
             sys.stdout.flush()
 
         return err
-        
-
-
-    # def log_scalars(self,
-    #                 scalars,
-    #                 scalar_names: str | None = None,
-    #                 tag: str | None = None,
-    #                 step: int | None = None,
-    #                 log: bool = False,
-    #                 all_losses: jnp.ndarray | None = None):
-    #     if log:
-    #         writer = SummaryWriter(log_dir=self.dir.log_dir)
-    #         writer.add_scalars(tag,
-    #                         {name: np.array(loss) for name, loss in zip(scalar_names, scalars)},
-    #                         global_step=step)
-                    
-    #         writer.close()
-        
-    #     return jnp.concatenate([all_losses, scalars.reshape(-1, scalars.shape[0])])
-    
-    # def plot_training_points(self, save=True, log=False, step=None):
-        
-    #     rc("text", usetex=True)
-    #     rc('text.latex', preamble=r'\usepackage{amsmath}')
-        
-    #     plt.figure()
-    #     _ = jtu.tree_map_with_path(lambda x, y: plt.scatter(np.array(y)[:,0], np.array(y)[:,1], **self.sample_plots.kwargs[x[0].key]), OrderedDict(self.train_points))
-        
-    #     handles, labels = plt.gca().get_legend_handles_labels()
-    #     by_label = dict(zip(labels, handles))
-    #     plt.legend(by_label.values(), by_label.keys(), bbox_to_anchor=(1.04, 1))
-    #     plt.xlabel("$x$", fontsize=15)
-    #     plt.ylabel("$y$", fontsize=15)
-    #     plt.gca().set_box_aspect(1)
-        
-    #     if save:
-    #         save_fig(self.dir.figure_dir, "training_points", "png", plt.gcf())
-        
-    #     plt.close()

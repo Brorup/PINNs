@@ -159,6 +159,15 @@ class SoftAdaptSettings(AdaptiveWeightSchemeSettings):
     shift_by_max_val: bool = True
 
 
+@dataclass
+class EarlyStoppingSettings(Settings):
+    patience: int | None = None
+    patience_counter: int = 0
+    min_delta: float | None = None
+    best_loss: float = float('inf')
+    do_check: bool = 1
+
+
 @dataclass(kw_only=True)
 class TrainingSettings(Settings):
     sampling: dict | None = None

@@ -99,7 +99,12 @@ class NN01(CTSNN):
                                                                                                 batch_num=batch_num,
                                                                                                 eval_func=partial(self.eval, metric=self.eval_settings.error_metric)
                                                                                                 )
-            
+
+            if self.early_stopping():
+                print(f"\nEarly stopping at epoch {epoch}\n")
+                self.do_every(epoch, jitted_loss, update_key=update_key, last=True)
+                break
+
             self.do_every(epoch, jitted_loss, update_key=update_key, last=epoch==max_epochs-1)
         
         self.plot_loss_history()

@@ -1,14 +1,14 @@
 {
-    "id": "001",
+    "id": "000",
     "seed": 1234,
-    "description": "CTS",
+    "description": "CTS with small and shallow network",
 
     "io": {
         "base_dir": "/home/antj/PINNs/PINN_framework/experiments/CTS",
         "figure_dir": "/home/antj/PINNs/PINN_framework/experiments/CTS/figures",
         "model_dir": "/home/antj/PINNs/PINN_framework/experiments/CTS/models",
         "log_dir": "/home/antj/PINNs/PINN_framework/experiments/CTS/logs",
-        "data_dir": "/home/antj/PINNs/PINN_framework/data/CTS"
+        "data_dir": "/home/antj/PINNs/PINN_framework/data/CTS/scanem_list"
     },
     
     "verbosity": {
@@ -24,9 +24,9 @@
         "beam_overlap": 20,
         "input_power": 500000, 
         "train": {
-            "iterations": 20000,
+            "iterations": 100000,
             "optimizer": "adam",
-            "loss_fn": "mse",
+            "loss_fn": "4",
             "update_scheme": "unweighted",
             "update_kwargs": {
                 "softadapt": {
@@ -63,6 +63,10 @@
                 "loss_emphasis": 2,
                 "replace": true
             },
+            "early_stop_vars": {
+                "patience": 1000,
+                "min_delta": 0.0001
+            },
             "jitted_update": true
         },
         "eval": {
@@ -78,7 +82,7 @@
                     "specifications": {
                         "input_dim": 9,
                         "output_dim": 1000,
-                        "hidden_dims": [2000, 2000, 2000, 2000],
+                        "hidden_dims": [64, 64],
                         "activation": "tanh",
                         "initialization": "glorot_normal"                    
                     }
@@ -98,7 +102,7 @@
 
     "logging": {
         "do_logging": true,
-        "log_every": 100,
+        "log_every": 1,
         "print_every": 1000
     }
 }

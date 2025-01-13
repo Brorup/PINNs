@@ -6,6 +6,7 @@ from matplotlib.figure import Figure
 import matplotlib.pyplot as plt
 # from torch.utils.tensorboard import SummaryWriter
 import numpy as np
+from matplotlib import rc
 
 _CLEVELS = 101
 
@@ -21,12 +22,6 @@ def save_fig(dir: str, file_name: str, format: str = "png",
     if close:
         plt.close(fig)
     return
-
-# def log_img(dir: str, file_name: str, image_tensor, step=None):
-#     writer = SummaryWriter(log_dir=dir)
-#     writer.add_image(file_name, image_tensor, global_step=step)
-#     writer.close()
-#     return
 
 
 def multi_scatter(xy, t, kwargs: dict[dict]):
@@ -65,32 +60,28 @@ def get_plot_variables(xlim, ylim, grid = 201):
     return X, Y, plotpoints
 
 
-def plot_loss_history(train_loss_history, dir: str, file_name: str, format: str = "png", eval_loss_history = None, stepsize = 1):
-    if eval_loss_history is None:
-        plt.semilogy(jnp.linspace(0, 2*jnp.length(train_loss_history), 2), train_loss_history)
+def plot_loss_history(train_loss_history, dir: str, file_name: str, format: str = "png", validation_loss_history = None, stepsize = 1):
+    
+    rc("text", usetex=True)
+    rc('text.latex', preamble=r'\usepackage{amsmath}')
+
+    fig = plt.figure(figsize=(18,10))
+    plt.grid(True)
+    ll = jnp.arange(0, stepsize*jnp.size(train_loss_history), stepsize)
+    llval = jnp.arange(0, stepsize*jnp.size(validation_loss_history), stepsize)
+
+    if validation_loss_history is None:
+        plt.semilogy(ll, train_loss_history)
     else:
-        plt.semilogy(jnp.arange(0, 2*jnp.size(train_loss_history), 2), train_loss_history, label='Training loss')
-        plt.semilogy(jnp.arange(0, 2*jnp.size(eval_loss_history), 2), eval_loss_history, c='r', label='Evaluation loss')
+        plt.semilogy(ll, train_loss_history, label='Training loss')
+        plt.semilogy(llval, validation_loss_history, c='r', label='Validation loss')
+    
+    ax = fig.gca()
+    ax.set_xticks(np.linspace(0, max(max(ll), max(llval)), 11, dtype=np.int32))
+    ax.set_xticklabels(np.linspace(0, max(max(ll), max(llval)), 11, dtype=np.int32), fontsize=25)
+    ax.set_xlabel(r"\textbf{Epochs}", fontsize=30)
+    ax.tick_params(axis='y', labelsize=25)
+    ax.set_ylabel(r"\textbf{MSE}", fontsize=30, rotation=0, ha="right", labelpad=5)
     
     save_fig(dir, file_name, format)
     return
-
-
-# def log_plot(X, Y, Z, name, log_dir, step=None, vmin=None, vmax=None, logscale=False, dpi=50):
-#     fig = plt.figure(figsize=(10,10), dpi=dpi)
-#     p = plt.contourf(X, Y, Z, vmin=vmin, vmax=vmax, levels=_CLEVELS)
-#     plt.colorbar(p, ax=plt.gca())
-#     log_figure(fig=plt.gcf(), name=name, log_dir=log_dir, step=step)
-#     plt.close()
-#     return
-
-# def log_figure(fig, name, log_dir, step=None):
-#     fig.canvas.draw()
-    
-#     data = np.frombuffer(fig.canvas.tostring_rgb(), dtype=np.uint8)
-#     w, h = fig.canvas.get_width_height()
-#     data2 = data.reshape((int(h), int(w), -1))
-#     im = data2.transpose((2, 0, 1))
-    
-#     log_img(log_dir, name, im, step=step)
-#     return

@@ -13,7 +13,8 @@ from matplotlib import rc
 from setup.settings import (
     ModelNotInitializedError,
     DefaultSettings,
-    AdaptiveWeightSchemeSettings
+    AdaptiveWeightSchemeSettings,
+    EarlyStoppingSettings
 )
 from setup.parsers import (
     parse_verbosity_settings,
@@ -118,6 +119,11 @@ class Model(metaclass=ABCMeta):
         self.loss_fn = self.train_settings.loss_fn
 
         self.eval_settings, self.do_eval = parse_run_settings(run_settings, run_type="eval")
+
+        if run_settings["train"].get("early_stop_vars") is not None:
+            self.early_stop_vars = EarlyStoppingSettings(**run_settings["train"].get("early_stop_vars"))
+        else:
+            self.early_stop_vars = EarlyStoppingSettings()
 
         return
     
@@ -345,6 +351,28 @@ class Model(metaclass=ABCMeta):
             self.weights = new_weights
 
         return
+    
+    
+    def _early_stopping(self, err):
+        """
+        Early stopping check
+        """
+        # If early stop variables are None, do not check for early stopping
+        if (self.early_stop_vars.min_delta is None) or (self.early_stop_vars.patience is None):
+            if self.early_stop_vars.do_check:
+                print("Incompatible early stopping parameters, not performing early stop check")
+                self.early_stop_vars.do_check = 0
+            return
+
+        # Check if validation loss has stopped decreasing
+        if err < self.early_stop_vars.best_loss - self.early_stop_vars.min_delta:
+            self.early_stop_vars.best_loss = err
+            self.early_stop_vars.patience_counter = 0
+        else:
+            self.early_stop_vars.patience_counter += 1
+            if self.early_stop_vars.patience_counter >= self.early_stop_vars.patience:
+                return 1
+        return
 
     def _set_update(self,
                     loss_fun_name: str = "_total_loss",
@@ -431,80 +459,3 @@ class Model(metaclass=ABCMeta):
             s += "\n\n"
 
         return s
-    
-    
-    def plot_loss(
-    self,
-    loss_arr: jax.Array,
-    loss_map: dict,
-    *,
-    fig_dir,
-    name,
-    epoch_step = None,
-    extension="png",
-    figsize = (35, 30)
-    ) -> None:
-        """
-        Plots losses from array in different subplots according to the specified dict.
-        """
-        
-        # num_plots = len(loss_map.keys())
-        # fig, ax = plt.subplots(int(np.ceil(np.sqrt(num_plots))), int(np.ceil(np.sqrt(num_plots))), figsize=figsize)
-        # plot_split = list(loss_map.keys())
-
-        # if epoch_step is not None:
-        #     epochs = epoch_step*np.arange(loss_arr.shape[0])
-        #     for i in range(num_plots):
-        #         ax[np.unravel_index(i, ax.shape)].semilogy(epochs, loss_arr[:, loss_map[plot_split[i]]], linewidth=5)
-        #         ax[np.unravel_index(i, ax.shape)].tick_params(axis='x')
-        #         ax[np.unravel_index(i, ax.shape)].tick_params(axis='y')
-        #         # ax[i].fill_between(epochs[epochs % 10000 >= 5000], 0, facecolor='gray', alpha=.5)
-        # else:
-        #     for i in range(num_plots):
-        #         ax[np.unravel_index(i, ax.shape)].semilogy(loss_arr[:, loss_map[plot_split[i]]], linewidth=5)
-        #         ax[np.unravel_index(i, ax.shape)].tick_params(axis='x')
-        #         ax[np.unravel_index(i, ax.shape)].tick_params(axis='y')
-            
-        # save_fig(fig_dir, name, extension, fig=fig)
-        # plt.clf()
-        
-        # num_plots = len(loss_map.keys())
-        
-        # if epoch_step is not None:
-        #     epochs = epoch_step*np.arange(loss_arr.shape[0])
-        # else:
-        #     epochs = np.arange(loss_arr.shape[0])
-        
-        # plt.semilogy(epochs, loss_arr, linewidth=2)
-        # plt.tick_params(axis='x')
-        # plt.tick_params(axis='y')
-            
-        # save_fig(fig_dir, "all_" + name, extension, fig=plt.gcf())
-        
-        rc("text", usetex=True)
-        rc('text.latex', preamble=r'\usepackage{amsmath}')
-        
-        fig = plt.figure(figsize=(18,10))
-        plt.grid(True)
-        if epoch_step is not None:
-            ll = epoch_step*np.arange(1, loss_arr.shape[0] + 1)
-        else:
-            ll = np.arange(1, loss_arr.shape[0] + 1)
-        plt.semilogy(ll, loss_arr)
-        # if hasattr (self, "loss_names"):
-        #     plt.legend(self.loss_names, fontsize=25, framealpha=1.0)
-        # else:
-        plt.legend(list(loss_map.keys()), fontsize=25, framealpha=1.0, loc="upper right")
-        # plt.ylim(8e-7, 1e1)
-        ax = fig.gca()
-        ax.set_xticks(np.linspace(0, max(ll), 11, dtype=np.int32))
-        ax.set_xticklabels(np.linspace(0, max(ll), 11, dtype=np.int32), fontsize=25)
-        ax.set_xlabel(r"\textbf{Epochs}", fontsize=30)
-        ax.tick_params(axis='y', labelsize=25)
-        ax.set_ylabel(r"\textbf{MSE}", fontsize=30, rotation=0, ha="right", labelpad=5)
-        fig.savefig(fig_dir / (name + ".png"), bbox_inches="tight")
-        
-        return
-        
-        
-    

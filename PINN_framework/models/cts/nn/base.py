@@ -15,6 +15,7 @@ import f90nml
 import numpy as np
 import pprint
 from sklearn.preprocessing import normalize
+from sklearn.model_selection import train_test_split
 
 from datahandlers.generators import (
     generate_rectangle,
@@ -166,31 +167,43 @@ class CTSNN(NN):
             num_params = 9
             self.param_names = ["FRQi", "theta", "phi", "Bmod", "Ne", "Te", "Ti", "Vd", "Ri"]
 
+        # Load train and validation data
+        # Load varying params
         cts_params_filename = self.train_data_dir / "scanem_list_var.bin"
-        cts_params = np.fromfile(cts_params_filename, dtype=np.float64) 
-        self.train_points = {"cts_params": cts_params.reshape((-1, num_params))}
-        num_train_points = self.train_points["cts_params"].shape[0]
+        cts_params = np.fromfile(cts_params_filename, dtype=np.float64).reshape((-1, num_params))
+        num_data_points = cts_params.shape[0]
 
+        # Load static params from namelist file
         nml_filename = self.train_data_dir / "scanem_list.par"
         nml = f90nml.read(nml_filename)["scannml"]
         num_freqs = nml["nfrqs"]
 
+        # Load spectra
         spectra_file = self.train_data_dir / "scanem_list.dat"
-        spectra = np.memmap(spectra_file, np.float64, mode='r', shape=(num_train_points,num_freqs))
-        self.train_points["cts_spectra"] = spectra 
+        spectra = np.memmap(spectra_file, np.float64, mode='r', shape=(num_data_points,num_freqs))
 
+        # Split train and validation data
+        train_cts_params, validation_cts_params, train_spectra, validation_spectra = train_test_split(cts_params, spectra, test_size=0.1) #TODO un-hardcode train test split size here
+        self.train_points = {"cts_params": train_cts_params, "cts_spectra": train_spectra}
+        self.validation_points = {"cts_params": validation_cts_params, "cts_spectra": validation_spectra}
+
+
+        # Load test data
+        # Load varying params
         cts_params_filename = self.eval_data_dir / "scanem_list_var.bin"
-        cts_params = np.fromfile(cts_params_filename, dtype=np.float64) 
-        self.eval_points = {"cts_params": cts_params.reshape((-1, num_params))}
-        num_eval_points = self.eval_points["cts_params"].shape[0]
+        cts_params = np.fromfile(cts_params_filename, dtype=np.float64).reshape((-1, num_params))
+        num_eval_points = cts_params.shape[0]
 
+        # Load static params from namelist file
         nml_filename = self.eval_data_dir / "scanem_list.par"
         nml = f90nml.read(nml_filename)["scannml"]
         num_freqs = nml["nfrqs"]
 
+        # Load spectra
         spectra_file = self.eval_data_dir / "scanem_list.dat"
         spectra = np.memmap(spectra_file, np.float64, mode='r', shape=(num_eval_points,num_freqs))
-        self.eval_points["cts_spectra"] = spectra 
+
+        self.eval_points = {"cts_params": cts_params, "cts_spectra": spectra}
 
         self.truncate_spectra()
 
@@ -198,9 +211,12 @@ class CTSNN(NN):
 
         self.scale_spectra()
 
+        #TODO implement and call an apply notch function
+
         self.numpy_to_jax_data()
 
         self.train_true_val = self.train_points
+        self.validation_true_val = self.validation_points
         self.eval_true_val = self.eval_points
 
         self._key, dataset_key = jax.random.split(self._key, 2)
@@ -233,13 +249,13 @@ class CTSNN(NN):
                     
                     if value['min'] == value['max']:
                         self.train_points["cts_params"][:, index] = self.train_points["cts_params"][:, index] / value['min']
+                        self.validation_points["cts_params"][:, index] = self.validation_points["cts_params"][:, index] / value['min']
                         self.eval_points["cts_params"][:, index] = self.eval_points["cts_params"][:, index] / value['min']
                     else:
                         self.train_points["cts_params"][:, index] = (self.train_points["cts_params"][:, index] - value['min']) / (value['max'] - value['min'])
+                        self.validation_points["cts_params"][:, index] = (self.validation_points["cts_params"][:, index] - value['min']) / (value['max'] - value['min'])
                         self.eval_points["cts_params"][:, index] = (self.eval_points["cts_params"][:, index] - value['min']) / (value['max'] - value['min'])
-            
-            self.train_points["cts_params"] = self.train_points["cts_params"]
-            self.eval_points["cts_params"] = self.eval_points["cts_params"]
+
         return
     
     def normalize_spectra(self, norm='max'):  
@@ -247,6 +263,7 @@ class CTSNN(NN):
         Method to normalize spectra according to some specified norm
         """
         self.train_points["cts_spectra"] = normalize(self.train_points["cts_spectra"], norm=norm)
+        self.validation_points["cts_spectra"] = normalize(self.validation_points["cts_spectra"], norm=norm)
         self.eval_points["cts_spectra"] = normalize(self.eval_points["cts_spectra"], norm=norm)
         return
     
@@ -260,6 +277,7 @@ class CTSNN(NN):
         if self._verbose.data:
             print(f"Scaling spectra with a factor of {scaling}")
         self.train_points["cts_spectra"] = self.train_points["cts_spectra"]*scaling
+        self.validation_points["cts_spectra"] = self.validation_points["cts_spectra"]*scaling
         self.eval_points["cts_spectra"] = self.eval_points["cts_spectra"]*scaling
         return
 
@@ -290,6 +308,9 @@ class CTSNN(NN):
             self.train_points["cts_spectra"] = np.delete(self.train_points["cts_spectra"], np.s_[-num_truncate_r:], 1)
             self.train_points["cts_spectra"] = np.delete(self.train_points["cts_spectra"], np.s_[:num_truncate_l], 1)
 
+            self.validation_points["cts_spectra"] = np.delete(self.validation_points["cts_spectra"], np.s_[-num_truncate_r:], 1)
+            self.validation_points["cts_spectra"] = np.delete(self.validation_points["cts_spectra"], np.s_[:num_truncate_l], 1)
+            
             self.eval_points["cts_spectra"] = np.delete(self.eval_points["cts_spectra"], np.s_[-num_truncate_r:], 1)
             self.eval_points["cts_spectra"] = np.delete(self.eval_points["cts_spectra"], np.s_[:num_truncate_l], 1)
 
@@ -300,12 +321,33 @@ class CTSNN(NN):
         Method to convert from numpy arrays or memmaps to jax arrays
         """
         self.train_points["cts_spectra"] = jnp.asarray(self.train_points["cts_spectra"])
+        self.validation_points["cts_spectra"] = jnp.asarray(self.validation_points["cts_spectra"])
         self.eval_points["cts_spectra"] = jnp.asarray(self.eval_points["cts_spectra"])
 
         self.train_points["cts_params"] = jnp.asarray(self.train_points["cts_params"])
+        self.validation_points["cts_params"] = jnp.asarray(self.validation_points["cts_params"])
         self.eval_points["cts_params"] = jnp.asarray(self.eval_points["cts_params"])
 
         return
+    
+    @partial(jax.jit, static_argnums=(0,))
+    def early_stopping_jittable(self, points, u_true, params):
+        return mse(netmap(self.forward)(params, points), u_true)
+    
+
+    def early_stopping(self):
+        """
+        Stops training early if validation loss stops decreasing
+        """
+        
+        points = self.validation_points["cts_params"]
+        u_true = self.validation_true_val["cts_spectra"]
+        
+        err = self.early_stopping_jittable(points, u_true, self.params)
+
+        stop = self._early_stopping(err)
+
+        return stop
     
     def eval(self, metric: str  = "all", verbose = None, **kwargs):
         """
@@ -322,17 +364,19 @@ class CTSNN(NN):
         return err
 
     def plot_results(self, save=True, log=False, step=None):
+        ctsplot.plot_results(netmap(self.forward)(self.params, self.train_points["cts_params"]), self.train_true_val["cts_spectra"],
+                             self.dir.figure_dir, type="train", save=save, dpi=self.plot_settings["dpi"])
         ctsplot.plot_results(netmap(self.forward)(self.params, self.eval_points["cts_params"]), self.eval_true_val["cts_spectra"],
-                             self.dir.figure_dir, save=save, dpi=self.plot_settings["dpi"])
+                             self.dir.figure_dir, type="eval", save=save, dpi=self.plot_settings["dpi"])
         
     def plot_loss_history(self):
         with open(self.dir.log_dir.joinpath('all_train_losses.npy'), "rb") as f:
             train_loss_history = jnp.load(f)
 
-        with open(self.dir.log_dir.joinpath('all_eval_losses.npy'), "rb") as f:
-            eval_loss_history = jnp.load(f)
+        with open(self.dir.log_dir.joinpath('all_validation_losses.npy'), "rb") as f:
+            validation_loss_history = jnp.load(f)
 
-        plot_loss_history(train_loss_history, eval_loss_history=eval_loss_history, stepsize=self.logging.log_every, dir=self.dir.figure_dir, file_name="loss_history", format="png")
+        plot_loss_history(train_loss_history, validation_loss_history=validation_loss_history, stepsize=self.logging.log_every, dir=self.dir.figure_dir, file_name="loss_history", format="png")
 
         return
 
@@ -345,13 +389,13 @@ class CTSNN(NN):
         if do_log & (epoch % log_every == log_every-1):
             loss_terms = loss_term_fun(params=self.params, inputs=self.train_points, true_val=self.train_true_val, **kwargs)
             if epoch // log_every == 0:
-                self.all_train_losses = []#jnp.zeros((0, loss_terms.shape[0]))
-            self.all_train_losses.append(loss_terms)#jnp.append(self.all_train_losses, loss_terms)
+                self.all_train_losses = []
+            self.all_train_losses.append(loss_terms)
 
-            loss_terms = loss_term_fun(params=self.params, inputs=self.eval_points, true_val=self.eval_true_val, **kwargs)
+            loss_terms = loss_term_fun(params=self.params, inputs=self.validation_points, true_val=self.validation_true_val, **kwargs)
             if epoch // log_every == 0:
-                self.all_eval_losses = []#jnp.zeros((0, loss_terms.shape[0]))
-            self.all_eval_losses.append(loss_terms)#jnp.append(self.all_eval_losses, loss_terms)
+                self.all_validation_losses = []
+            self.all_validation_losses.append(loss_terms)
 
         if epoch % checkpoint_every == checkpoint_every-1:
             self.write_model(step=epoch+1)
@@ -359,9 +403,9 @@ class CTSNN(NN):
                 with open(self.dir.log_dir.joinpath('all_train_losses.npy'), "wb") as f:
                     jnp.save(f, jnp.array(self.all_train_losses))
             
-            if hasattr(self, "all_eval_losses"):
-                with open(self.dir.log_dir.joinpath('all_eval_losses.npy'), "wb") as f:
-                    jnp.save(f, jnp.array(self.all_eval_losses))
+            if hasattr(self, "all_validation_losses"):
+                with open(self.dir.log_dir.joinpath('all_validation_losses.npy'), "wb") as f:
+                    jnp.save(f, jnp.array(self.all_validation_losses))
 
         if last:
             self.write_model(step=epoch+1)
@@ -369,8 +413,8 @@ class CTSNN(NN):
                 with open(self.dir.log_dir.joinpath('all_train_losses.npy'), "wb") as f:
                     jnp.save(f, jnp.array(self.all_train_losses))
             
-            if hasattr(self, "all_eval_losses"):
-                with open(self.dir.log_dir.joinpath('all_eval_losses.npy'), "wb") as f:
-                    jnp.save(f, jnp.array(self.all_eval_losses))
+            if hasattr(self, "all_validation_losses"):
+                with open(self.dir.log_dir.joinpath('all_validation_losses.npy'), "wb") as f:
+                    jnp.save(f, jnp.array(self.all_validation_losses))
         
         return
