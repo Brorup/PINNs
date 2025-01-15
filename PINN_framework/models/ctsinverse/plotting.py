@@ -77,7 +77,9 @@ def plot_prediction(prediction, data_true, labels, *, fig_dir, name, varying_par
     for i, ax in enumerate(fig.axes):
         if not varying_params[i]:
             continue
-        ax.plot(prediction[:, i] - data_true[:, i], label=f"{labels[i]} error")
+        ax.plot(prediction[:, i] - data_true[:, i], '.', label=f"{labels[i]} error")
+        ax.hlines(y=jnp.percentile(prediction[:, i] - data_true[:, i], 2.5), xmin=0, xmax=prediction.shape[0], color='r', linestyle='--')
+        ax.hlines(y=jnp.percentile(prediction[:, i] - data_true[:, i], 97.5), xmin=0, xmax=prediction.shape[0], color='r', linestyle='--')
         ax.legend()
         ax.set_ylim((-1, 1))
 
