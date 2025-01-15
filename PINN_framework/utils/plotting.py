@@ -67,8 +67,8 @@ def plot_loss_history(train_loss_history, dir: str, file_name: str, format: str 
 
     fig = plt.figure(figsize=(18,10))
     plt.grid(True)
-    ll = jnp.arange(0, stepsize*jnp.size(train_loss_history), stepsize)
-    llval = jnp.arange(0, stepsize*jnp.size(validation_loss_history), stepsize)
+    ll = jnp.arange(0, stepsize*jnp.shape(train_loss_history)[0], stepsize)
+    llval = jnp.arange(0, stepsize*jnp.shape(validation_loss_history)[0], stepsize)
 
     if validation_loss_history is None:
         plt.semilogy(ll, train_loss_history)

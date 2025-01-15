@@ -36,11 +36,14 @@ class NN01(CTSINN):
 
         # Default update
         # Computes losses for forward model
-        loss_data = self.loss_data(params, inputs["cts_spectra"], true_val=true_val.get("cts_params"))
+        if update_key == 1:
+            loss_data = self.loss_data(params, inputs["cts_spectra"], true_val=true_val.get("cts_params"))
+            return jnp.array((loss_data,))
+
+        loss_data = self.loss_data_individual(params, inputs["cts_spectra"], true_val=true_val.get("cts_params"))
         
-        # Return 1D array of all loss values in the following order
-        self.loss_names = ["data"] 
-        return jnp.array((loss_data,))
+        # Return 1D array of all loss values in the following order 
+        return jnp.array((*loss_data,))
 
     def train(self, update_key = None, epochs: int | None = None, new_init: bool = False) -> None:
         """

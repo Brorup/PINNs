@@ -89,6 +89,21 @@ class CTSINN(CTSNN):
         output = self.forward(self.params, input)
 
         return output
+    
+    def loss_data_individual(self, params, input: jax.Array, true_val: jax.Array | None = None):
+        
+        # Compute model output
+        out = netmap(self.forward)(params, input)
+
+        # Compute loss
+        if self.loss_fn is None:
+            loss_fn = mse
+        else:
+            loss_fn = self.loss_fn
+
+        if true_val is None:
+            return jax.vmap(loss_fn, in_axes=(1, ))(out)
+        return jax.vmap(loss_fn, in_axes=(1, 1))(out, true_val)
 
     def scale_output(self, params):
         """

@@ -1,5 +1,5 @@
 {
-    "id": "004",
+    "id": "005",
     "seed": 1234,
     "description": "CTS inverse problem of going from spectra to parameters",
 
@@ -19,27 +19,44 @@
     },
 
     "run": {
-        "data_dir": "run1",
+        "data_dir": "run0",
         "truncate_spectra_to": 1024,
         "notch_size": 200,
         "beam_overlap": 20,
         "input_power": 500000,
         "train": {
-            "iterations": 50000,
+            "iterations": 10000,
             "optimizer": "adam",
             "loss_fn": "mse",
             "validation_metric": "mse",
-            "update_scheme": "unweighted",
+            "update_scheme": "weighted",
             "update_kwargs": {
+                "softadapt": {
+                    "order": 4,
+                    "beta": 0.1,
+                    "loss_weighted": false,
+                    "normalized": false,
+                    "update_every": 10,
+                    "running_average": 0.9
+                },
+                "gradnorm": {
+                    "normalized": true,
+                    "update_every": 10,
+                    "running_average": 0.9
+                },
                 "unweighted": {
                     "normalized": true
+                },
+                "weighted": {
+                    "weights": [1, 1, 1, 1, 1, 1, 1, 1, 10],
+                    "normalized": false
                 }
             },
-            "learning_rate": 1e-5,
+            "learning_rate": 1e-4,
             "train_validation_split": 0.9,
             "batch_size": -1,
             "decay_rate": 0.95,
-            "decay_steps": 100,
+            "decay_steps": 200,
             "transfer_learning": false,
             "checkpoint_every": 5000,
             "early_stop_vars": {
@@ -59,7 +76,7 @@
                     "specifications": {
                         "input_dim": -1,
                         "output_dim": 9,
-                        "hidden_dims": [2048, 2048, 2048, 2048],
+                        "hidden_dims": [64, 64, 64, 64],
                         "activation": "tanh",
                         "initialization": "glorot_normal"                    
                     }
@@ -79,7 +96,7 @@
 
     "logging": {
         "do_logging": true,
-        "log_every": 1,
+        "log_every": 10,
         "print_every": 1000
     }
 }

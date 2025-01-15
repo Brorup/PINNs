@@ -39,7 +39,6 @@ class NN01(CTSNN):
         loss_data = self.loss_data(params, inputs["cts_params"], true_val=true_val.get("cts_spectra"))
         
         # Return 1D array of all loss values in the following order
-        self.loss_names = ["data"] 
         return jnp.array((loss_data,))
 
     def train(self, update_key = None, epochs: int | None = None, new_init: bool = False) -> None:
