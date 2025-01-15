@@ -71,6 +71,7 @@ class SupportedActivations:
     sigmoid: Callable = nn.sigmoid
     silu: Callable = nn.silu
     swish: Callable = nn.silu
+    relu: Callable = nn.relu
     sin: Callable = jax.jit(jnp.sin)
     cos: Callable = jax.jit(jnp.cos)
     wavelet: Callable = WaveletActivation(1.0)
