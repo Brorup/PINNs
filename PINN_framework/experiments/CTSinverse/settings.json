@@ -1,5 +1,5 @@
 {
-    "id": "001",
+    "id": "004",
     "seed": 1234,
     "description": "CTS inverse problem of going from spectra to parameters",
 
@@ -12,17 +12,18 @@
     },
     
     "verbosity": {
-        "init": true,
-        "data": true,
+        "init": false,
+        "data": false,
         "training": true,
         "evaluation": true
     },
 
     "run": {
-        "data_dir": "run0",
-        "truncate_spectra_to": 1000,
+        "data_dir": "run1",
+        "truncate_spectra_to": 1024,
+        "notch_size": 200,
         "beam_overlap": 20,
-        "input_power": 500000, 
+        "input_power": 500000,
         "train": {
             "iterations": 50000,
             "optimizer": "adam",
@@ -34,16 +35,16 @@
                     "normalized": true
                 }
             },
-            "learning_rate": 1e-3,
+            "learning_rate": 1e-5,
             "train_validation_split": 0.9,
             "batch_size": -1,
             "decay_rate": 0.95,
-            "decay_steps": 2000,
+            "decay_steps": 100,
             "transfer_learning": false,
             "checkpoint_every": 5000,
             "early_stop_vars": {
                 "patience": 1000,
-                "min_delta": 0.001
+                "min_delta": 0.00001
             },
             "jitted_update": true
         },
@@ -56,9 +57,9 @@
                 {
                     "architecture": "mlp",
                     "specifications": {
-                        "input_dim": 1000,
+                        "input_dim": -1,
                         "output_dim": 9,
-                        "hidden_dims": [64, 64, 64, 64],
+                        "hidden_dims": [2048, 2048, 2048, 2048],
                         "activation": "tanh",
                         "initialization": "glorot_normal"                    
                     }

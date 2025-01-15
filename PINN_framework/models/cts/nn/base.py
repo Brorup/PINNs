@@ -74,20 +74,22 @@ class CTSNN(NN):
 
     def __init__(self, settings: dict, *args, **kwargs):
         super().__init__(settings, *args, **kwargs)
+        
+        self.truncate_spectra_to = settings["run"]["truncate_spectra_to"]
+        self.notch_size = settings["run"]["notch_size"]
 
-        self.init_model(settings["model"]["nn"]["network"])
+        self.init_model(self.alter_net_size(settings["model"]["nn"]["network"]))
         self._set_update(loss_fun_name="_total_loss", optimizer_name="optimizer")
 
         self.data_dir = self.dir.data_dir / settings["run"]["data_dir"]
         self.train_data_dir = self.data_dir / "train"
         self.eval_data_dir = self.data_dir / "test"
-
-        self.truncate_spectra_to = settings["run"]["truncate_spectra_to"]
         
         self.spectra_scaling = settings["run"]["beam_overlap"] * settings["run"]["input_power"] * 1e3
 
         # Only use one network
         self.net = self.nets[0]
+
         self.opt_state = self.optimizer.init(self.params)
         
         if self._verbose.init:
@@ -120,6 +122,18 @@ class CTSNN(NN):
 
         return output
         
+    def alter_net_size(self, settings):
+        """
+        Method for automatically fixing the input (CTSinverse) or output (CTS) size of the networks taking truncation and notch into account
+        """
+        if settings[0]['specifications']['input_dim'] == -1:
+            settings[0]['specifications']['input_dim'] = self.truncate_spectra_to - self.notch_size
+    
+        if settings[0]['specifications']['output_dim'] == -1:
+            settings[0]['specifications']['output_dim'] = self.truncate_spectra_to - self.notch_size
+    
+        return settings
+    
     def loss_data(self, params, input: jax.Array, true_val: jax.Array | None = None):
         
         # Compute model output
@@ -213,11 +227,11 @@ class CTSNN(NN):
 
         self.truncate_spectra()
 
+        self.notch_spectra()
+
         self.normalize_params()
 
         self.scale_spectra()
-
-        #TODO implement and call an apply notch function
 
         self.numpy_to_jax_data()
 
@@ -237,6 +251,50 @@ class CTSNN(NN):
             sys.stdout.flush()
 
         return
+    
+    def truncate_spectra(self):
+        """
+        method to truncate the spectra so the peaks at the edges are filtered out
+        """
+        if self.truncate_spectra_to != self.train_points["cts_spectra"].shape[1]:
+            if self._verbose.data:
+                print(f"Truncating data from {self.train_points["cts_spectra"].shape[1]} to {self.truncate_spectra_to} frequency bins...\n")
+            num_truncate = self.train_points["cts_spectra"].shape[1] - self.truncate_spectra_to
+            if num_truncate % 2 == 0:
+                num_truncate_l = num_truncate // 2
+                num_truncate_r = num_truncate // 2
+            else:
+                num_truncate_l = num_truncate // 2
+                num_truncate_r = num_truncate // 2 + 1
+
+            self.train_points["cts_spectra"] = np.delete(self.train_points["cts_spectra"], np.s_[-num_truncate_r:], 1)
+            self.train_points["cts_spectra"] = np.delete(self.train_points["cts_spectra"], np.s_[:num_truncate_l], 1)
+
+            self.validation_points["cts_spectra"] = np.delete(self.validation_points["cts_spectra"], np.s_[-num_truncate_r:], 1)
+            self.validation_points["cts_spectra"] = np.delete(self.validation_points["cts_spectra"], np.s_[:num_truncate_l], 1)
+            
+            self.eval_points["cts_spectra"] = np.delete(self.eval_points["cts_spectra"], np.s_[-num_truncate_r:], 1)
+            self.eval_points["cts_spectra"] = np.delete(self.eval_points["cts_spectra"], np.s_[:num_truncate_l], 1)
+
+        return
+    
+    def notch_spectra(self):
+        """
+        Truncate spectra according to notch filter
+        """
+        if self._verbose.data:
+            print(f"Truncating data from {self.train_points["cts_spectra"].shape[1]} to {self.train_points["cts_spectra"].shape[1] - self.notch_size} frequency bins, by applying notch filter...\n")
+        num_truncate = self.notch_size
+        truncate_from = int(self.train_points["cts_spectra"].shape[1]/2 - num_truncate/2)
+        truncate_to = int(self.train_points["cts_spectra"].shape[1]/2 + num_truncate/2)
+
+        self.train_points["cts_spectra"] = np.delete(self.train_points["cts_spectra"], np.s_[truncate_from:truncate_to], 1)
+
+        self.validation_points["cts_spectra"] = np.delete(self.validation_points["cts_spectra"], np.s_[truncate_from:truncate_to], 1)
+        
+        self.eval_points["cts_spectra"] = np.delete(self.eval_points["cts_spectra"], np.s_[truncate_from:truncate_to], 1)
+
+        return
 
     def normalize_params(self):
         """
@@ -254,9 +312,14 @@ class CTSNN(NN):
                     self.param_ranges.append([value['min'], value['max']])
                     
                     if value['min'] == value['max']:
-                        self.train_points["cts_params"][:, index] = self.train_points["cts_params"][:, index] / value['min']
-                        self.validation_points["cts_params"][:, index] = self.validation_points["cts_params"][:, index] / value['min']
-                        self.eval_points["cts_params"][:, index] = self.eval_points["cts_params"][:, index] / value['min']
+                        if value['min'] == 0:
+                            self.train_points["cts_params"][:, index] = self.train_points["cts_params"][:, index] + 1
+                            self.validation_points["cts_params"][:, index] = self.validation_points["cts_params"][:, index] + 1
+                            self.eval_points["cts_params"][:, index] = self.eval_points["cts_params"][:, index] + 1
+                        else:
+                            self.train_points["cts_params"][:, index] = self.train_points["cts_params"][:, index] / value['min']
+                            self.validation_points["cts_params"][:, index] = self.validation_points["cts_params"][:, index] / value['min']
+                            self.eval_points["cts_params"][:, index] = self.eval_points["cts_params"][:, index] / value['min']
                     else:
                         self.train_points["cts_params"][:, index] = (self.train_points["cts_params"][:, index] - value['min']) / (value['max'] - value['min'])
                         self.validation_points["cts_params"][:, index] = (self.validation_points["cts_params"][:, index] - value['min']) / (value['max'] - value['min'])
@@ -295,32 +358,7 @@ class CTSNN(NN):
             scaling = self.spectra_scaling
 
         return spectra / scaling
-        
-    def truncate_spectra(self):
-        """
-        method to truncate the spectra so the peaks at the edges are filtered out
-        """
-        if self.truncate_spectra_to != self.train_points["cts_spectra"].shape[1]:
-            if self._verbose.data:
-                print(f"Truncating data from {self.train_points["cts_spectra"].shape[1]} to {self.truncate_spectra_to} frequency bins...\n")
-            num_truncate = self.train_points["cts_spectra"].shape[1] - self.truncate_spectra_to
-            if num_truncate % 2 == 0:
-                num_truncate_l = num_truncate // 2
-                num_truncate_r = num_truncate // 2
-            else:
-                num_truncate_l = num_truncate // 2
-                num_truncate_r = num_truncate // 2 + 1
-
-            self.train_points["cts_spectra"] = np.delete(self.train_points["cts_spectra"], np.s_[-num_truncate_r:], 1)
-            self.train_points["cts_spectra"] = np.delete(self.train_points["cts_spectra"], np.s_[:num_truncate_l], 1)
-
-            self.validation_points["cts_spectra"] = np.delete(self.validation_points["cts_spectra"], np.s_[-num_truncate_r:], 1)
-            self.validation_points["cts_spectra"] = np.delete(self.validation_points["cts_spectra"], np.s_[:num_truncate_l], 1)
-            
-            self.eval_points["cts_spectra"] = np.delete(self.eval_points["cts_spectra"], np.s_[-num_truncate_r:], 1)
-            self.eval_points["cts_spectra"] = np.delete(self.eval_points["cts_spectra"], np.s_[:num_truncate_l], 1)
-
-        return
+    
 
     def numpy_to_jax_data(self):
         """
