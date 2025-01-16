@@ -75,7 +75,7 @@ class Model(metaclass=ABCMeta):
             if self._verbose.init:
                 print(f"ID is set to '{self._id}'.")
         
-        self._static_loss_args = ()
+        self._static_loss_args = ("update_key")
         
         # Set a key for use in other methods
         # Important: Remember to return a new _key as well, e.g.:
@@ -120,7 +120,7 @@ class Model(metaclass=ABCMeta):
 
         self.eval_settings, self.do_eval = parse_run_settings(run_settings, run_type="eval")
 
-        if run_settings["train"].get("early_stop_vars") is not None:
+        if (run_settings["train"].get("early_stop_vars") is not None) and (self.train_settings.train_validation_split < 1.0):
             self.early_stop_vars = EarlyStoppingSettings(**run_settings["train"].get("early_stop_vars"))
         else:
             self.early_stop_vars = EarlyStoppingSettings()
@@ -358,7 +358,7 @@ class Model(metaclass=ABCMeta):
         Early stopping check
         """
         # If early stop variables are None, do not check for early stopping
-        if (self.early_stop_vars.min_delta is None) or (self.early_stop_vars.patience is None):
+        if (self.early_stop_vars.min_delta is None) or (self.early_stop_vars.patience is None) or (err is None):
             if self.early_stop_vars.do_check:
                 print("Incompatible early stopping parameters, not performing early stop check")
                 self.early_stop_vars.do_check = 0

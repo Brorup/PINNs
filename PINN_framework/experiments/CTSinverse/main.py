@@ -122,6 +122,6 @@ if __name__ == "__main__":
     raw_settings = parse_arguments()
     pinn = NN01(raw_settings)
     pinn.load_data()
-    pinn.train()
+    pinn.train(update_key=1)
     pinn.eval()
     pinn.plot_results()

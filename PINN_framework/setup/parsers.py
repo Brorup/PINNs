@@ -412,8 +412,7 @@ def parse_training_settings(settings_dict: dict) -> TrainingSettings:
     # train_validation_split
     if settings_dict.get("train_validation_split") is not None:
         check_unit(settings_dict["train_validation_split"], "train_validation_split")
-        settings.train_validation_split = 1 - settings_dict["train_validation_split"]
-        # subtracting from 1 here to convert from size of validation split to size of train split
+        settings.train_validation_split = settings_dict["train_validation_split"]
 
     # decay_rate
     if settings_dict.get("decay_rate") is not None:
@@ -640,7 +639,7 @@ def check_pos(option, name, strict = True):
         raise SettingsInterpretationError(f"Option '{name}' must be positive.")
     return
 
-def check_unit(option, name, strict = True):
+def check_unit(option, name, strict = False):
     """
     Ensure that input is in unit interval
     """

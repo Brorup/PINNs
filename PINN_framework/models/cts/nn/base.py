@@ -203,7 +203,13 @@ class CTSNN(NN):
 
         # Split train and validation data
         self._key, train_test_key = jax.random.split(self._key, 2)
-        train_cts_params, validation_cts_params, train_spectra, validation_spectra = train_test_split(cts_params, spectra, test_size=self.train_settings.train_validation_split, random_state=np.random.RandomState(train_test_key))
+        if self.train_settings.train_validation_split == 1.0:
+            train_cts_params = cts_params
+            train_spectra = spectra
+            validation_cts_params = cts_params # These are not used, but are just generated to not generate errors later on
+            validation_spectra = spectra # These are not used, but are just generated to not generate errors later on
+        else:
+            train_cts_params, validation_cts_params, train_spectra, validation_spectra = train_test_split(cts_params, spectra, train_size=self.train_settings.train_validation_split, random_state=np.random.RandomState(train_test_key))
         self.train_points = {"cts_params": train_cts_params, "cts_spectra": train_spectra}
         self.validation_points = {"cts_params": validation_cts_params, "cts_spectra": validation_spectra}
 
@@ -378,16 +384,16 @@ class CTSNN(NN):
     def early_stopping_jittable(self, points, u_true, params):
         return mse(netmap(self.forward)(params, points), u_true)
     
-
     def early_stopping(self):
         """
         Stops training early if validation loss stops decreasing
         """
-        
-        points = self.validation_points["cts_params"]
-        u_true = self.validation_true_val["cts_spectra"]
-        
-        err = self.early_stopping_jittable(points, u_true, self.params)
+        if self.early_stop_vars.do_check:
+            points = self.validation_points["cts_params"]
+            u_true = self.validation_true_val["cts_spectra"]
+            err = self.early_stopping_jittable(points, u_true, self.params)
+        else:
+            err = None
 
         stop = self._early_stopping(err)
 

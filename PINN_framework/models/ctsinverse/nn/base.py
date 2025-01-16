@@ -121,11 +121,12 @@ class CTSINN(CTSNN):
         """
         Stops training early if validation loss stops decreasing
         """
-        
-        points = self.validation_points["cts_spectra"]
-        u_true = self.validation_true_val["cts_params"]
-        
-        err = self.early_stopping_jittable(points, u_true, self.params)
+        if self.early_stop_vars.do_check: 
+            points = self.validation_points["cts_spectra"]
+            u_true = self.validation_true_val["cts_params"]
+            err = self.early_stopping_jittable(points, u_true, self.params)
+        else:
+            err = None
 
         stop = self._early_stopping(err)
 
